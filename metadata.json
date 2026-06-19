@@ -1,0 +1,7 @@
+{
+  "name": "AdsTrack",
+  "description": "Sistema avançado de rastreamento de links, geração de QR Codes e análise de métricas de campanhas de marketing.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}
