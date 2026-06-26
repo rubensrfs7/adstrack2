@@ -15,10 +15,14 @@ const pathMap: Record<string, { parent: string; child: string }> = {
 
 export const Breadcrumb: React.FC = () => {
   const location = useLocation();
-  const currentPath = pathMap[location.pathname] || { parent: 'Início', child: '' };
+  const currentPath = pathMap[location.pathname];
+  
+  if (!currentPath) {
+    return null;
+  }
 
   return (
-    <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 mb-6">
+    <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 mb-2">
       <span className="font-semibold text-gray-800 dark:text-white">{currentPath.parent}</span>
       {currentPath.child && (
         <>

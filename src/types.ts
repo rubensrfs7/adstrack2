@@ -45,6 +45,7 @@ export interface FormResponse {
     image_url: string;
   };
   created_at: string;
+  mock_form_response?: Record<string, any> | null;
 }
 
 export interface Lead {

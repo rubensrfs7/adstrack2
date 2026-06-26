@@ -3,20 +3,32 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { motion } from 'motion/react';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, 
-  PieChart, Pie, Cell, LineChart, Line, TooltipProps, AreaChart, Area, Legend
+  PieChart, Pie, Cell, LineChart, Line, TooltipProps, AreaChart, Area, Legend, ComposedChart
 } from 'recharts';
 import { MapContainer, TileLayer, CircleMarker, Popup, useMap } from 'react-leaflet';
 import { 
-  MousePointer2, Link as LinkIcon, Activity, TrendingUp, Info, LayoutDashboard, Loader2, Map as MapIcon, Star, Users, Zap, Thermometer, ShoppingCart, Filter, Flame, ChevronLeft, ChevronRight
+  MousePointer2, Link as LinkIcon, Activity, TrendingUp, Info, LayoutDashboard, Loader2, Map as MapIcon, Star, Users, Zap, Thermometer, ShoppingCart, Filter, Flame, ChevronLeft, ChevronRight, Facebook, Instagram, Music, Search, Globe, Linkedin, Twitter, Share2, Clock
 } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import CampaignModal from './CampaignModal';
+import LeadModal from './LeadModal';
 import { DateRangePicker } from './DateRangePicker';
 import { Campaign, ChartDataPoint, DailyClickData, DailyLeadData, EvolutionData, FormResponse } from '../types';
 import { PIE_CHART_DATA, EVOLUTION_DATA, DAILY_CLICKS, TOP_CREATIVES, TOP_SETS, MOCK_CAMPAIGNS, BRAZIL_COORDS, STATE_NAMES, MOCK_LOCATION_DATA } from '../constants';
 import { useNavigate } from 'react-router-dom';
 
 const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#6366F1'];
+
+const SOCIAL_MEDIA_CONFIG: Record<string, { icon: React.ComponentType<any>, color: string }> = {
+  'Facebook': { icon: Facebook, color: '#1877F2' },
+  'Instagram': { icon: Instagram, color: '#E1306C' },
+  'TikTok': { icon: (props: any) => <image href="https://v4d.mz-css.net/72363bc2e4e6ae3d1f04fa8813b83acf/ebf794d02231ae3927e08af8cb0352f0/vecteezy_tiktok-png-icon_16716450.png" x={props.x} y={props.y} width={props.width} height={props.height} />, color: '#000000' },
+  'Google': { icon: (props: any) => <image href="https://v4d.mz-css.net/72363bc2e4e6ae3d1f04fa8813b83acf/c8458652917e1b282bfbfac9ea664aeb/vecteezy_google-search-icon-google-product-illustration_12871371.png" x={props.x} y={props.y} width={props.width} height={props.height} />, color: '#4285F4' },
+  'Organic': { icon: Globe, color: '#34A853' },
+  'Linkedin': { icon: Linkedin, color: '#0077B5' },
+  'X': { icon: (props: any) => <image href="https://v4d.mz-css.net/72363bc2e4e6ae3d1f04fa8813b83acf/73dd18a69543874078d876f43390b763/vecteezy_new-twitter-x-logo-twitter-icon-x-social-media-icon_42148611.png" x={props.x} y={props.y} width={props.width} height={props.height} />, color: '#000000' },
+  'Outros': { icon: Share2, color: '#6B7280' }
+};
 
 // Componente para garantir renderização correta do mapa ao redimensionar
 const MapUpdater = () => {
@@ -40,29 +52,30 @@ const MapUpdater = () => {
   return null;
 };
 
-const FunnelStep = ({ label, value, color, max, visualMax, small }: { label: string, value: number, color: string, max: number, visualMax?: number, small?: boolean }) => {
-  const percentage = max > 0 ? Math.round((value / max) * 100) : 0;
-  const displayPercentage = (visualMax || max) > 0 ? (value / (visualMax || max)) * 100 : 0;
+const FunnelStep = ({ label, value, color, max, visualMax, small, overridePercentage }: { label: string, value: number, color: string, max: number, visualMax?: number, small?: boolean, overridePercentage?: number }) => {
+  const rawPercentage = max > 0 ? Math.round((value / max) * 100) : 0;
+  const percentage = overridePercentage ?? (rawPercentage <= 12 ? 13 : rawPercentage);
+  const displayPercentage = overridePercentage ?? ((visualMax || max) > 0 ? (value / (visualMax || max)) * 100 : 0);
   const displayValue = value >= 1000 ? `${(value / 1000).toFixed(1)}K` : value;
 
   return (
-    <div className={`flex items-center gap-6 ${small ? 'h-10' : 'h-14'}`}>
-      <span className={`w-28 text-right font-bold text-gray-400 dark:text-gray-500 uppercase tracking-tight ${small ? 'text-[10px]' : 'text-xs'}`}>
+    <div className={`flex flex-col lg:flex-row items-center gap-1 lg:gap-6 ${small ? 'h-auto' : 'h-auto'}`}>
+      <span className={`w-full lg:w-28 text-center lg:text-right font-bold text-gray-400 dark:text-gray-500 uppercase tracking-tight ${small ? 'text-[9px]' : 'text-[10px] lg:text-xs'}`}>
         {label}
       </span>
-      <div className={`flex-1 ${small ? 'h-10' : 'h-14'} bg-gray-100/50 dark:bg-zinc-900/30 rounded-xl relative overflow-hidden group border border-transparent dark:border-zinc-800/5 shadow-inner flex justify-center`}>
+      <div className={`w-full lg:flex-1 ${small ? 'h-8' : 'h-10 lg:h-14'} bg-gray-100/50 dark:bg-zinc-900/30 rounded-xl relative overflow-hidden flex justify-center border border-transparent dark:border-zinc-800/5 shadow-inner`}>
         <motion.div
           initial={{ width: 0 }}
-          animate={{ width: `${displayPercentage}%` }}
+          animate={{ width: `${Math.max(20, displayPercentage)}%` }}
           className={`h-full ${color} rounded-lg flex items-center justify-center min-w-fit shadow-sm relative`}
         >
-          <span className="text-[11px] font-black text-white px-2 z-10">
+          <span className="text-[10px] font-black text-white px-2 z-10">
             {percentage}%
           </span>
           <div className="absolute inset-0 bg-gradient-to-r from-white/10 to-transparent pointer-events-none" />
         </motion.div>
       </div>
-      <span className={`w-24 text-left font-black text-gray-800 dark:text-white ${small ? 'text-xs' : 'text-sm'}`}>
+      <span className={`w-full lg:w-24 text-center lg:text-left font-black text-gray-800 dark:text-white ${small ? 'text-xs' : 'text-sm'}`}>
         {displayValue}
       </span>
     </div>
@@ -75,15 +88,15 @@ const MultiSegmentFunnelStep = ({ label, segments, max, visualMax }: { label: st
   const totalPercentage = max > 0 ? Math.round((displayTotal / max) * 100) : 0;
   
   return (
-    <div className="flex items-center gap-6 h-14">
-      <span className="w-28 text-right font-bold text-gray-400 dark:text-gray-500 uppercase tracking-tight text-xs">
+    <div className="flex flex-col lg:flex-row items-center gap-1 lg:gap-6 h-auto">
+      <span className="w-full lg:w-28 text-center lg:text-right font-bold text-gray-400 dark:text-gray-500 uppercase tracking-tight text-[10px] lg:text-xs">
         {label}
       </span>
-      <div className="flex-1 h-14 bg-gray-100/50 dark:bg-zinc-900/30 rounded-xl relative overflow-hidden flex justify-center border border-transparent dark:border-zinc-800/5 shadow-inner">
-        <div className="flex h-full">
+      <div className="w-full lg:flex-1 h-10 lg:h-14 bg-gray-100/50 dark:bg-zinc-900/30 rounded-xl relative overflow-hidden flex justify-center border border-transparent dark:border-zinc-800/5 shadow-inner">
+        <div className="flex h-full w-full justify-center">
           {segments.map((seg, idx) => {
-            const widthPercentage = visualMax > 0 ? (seg.value / visualMax) * 100 : 0;
             const labelPercentage = displayTotal > 0 ? Math.round((seg.value / displayTotal) * 100) : 0;
+            const widthPercentage = labelPercentage;
             
             if (seg.value === 0) return null;
             
@@ -91,10 +104,10 @@ const MultiSegmentFunnelStep = ({ label, segments, max, visualMax }: { label: st
               <motion.div
                 key={idx}
                 initial={{ width: 0 }}
-                animate={{ width: `${widthPercentage}%` }}
+                animate={{ width: `${Math.max(10, widthPercentage)}%` }}
                 className={`h-full ${seg.color} flex items-center justify-center min-w-fit px-1.5 border-r border-white/5 last:border-r-0 relative group/seg shadow-sm first:rounded-l-lg last:rounded-r-lg`}
               >
-                <span className="text-[10px] font-black text-white whitespace-nowrap px-1 z-10">
+                <span className="text-[9px] font-black text-white whitespace-nowrap px-1 z-10">
                   {labelPercentage}%
                 </span>
                 
@@ -107,22 +120,36 @@ const MultiSegmentFunnelStep = ({ label, segments, max, visualMax }: { label: st
           })}
         </div>
       </div>
-      <span className="w-24 text-left font-black text-gray-800 dark:text-white text-sm">
+      <span className="w-full lg:w-24 text-center lg:text-left font-black text-gray-800 dark:text-white text-sm">
         {formattedTotal}
       </span>
     </div>
   );
 };
 
-const HeatMap = () => {
+const getSafeDate = (dateStr: string) => {
+  if (!dateStr || typeof dateStr !== 'string') return new Date();
+  const d = new Date(dateStr.includes('T') ? dateStr : `${dateStr}T12:00:00`);
+  if (isNaN(d.getTime())) return new Date();
+  return d;
+};
+
+const HeatMap: React.FC<{ endDate: string; onDateSelect: (date: string) => void }> = ({ endDate, onDateSelect }) => {
   const days = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
   const months = [
     'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
     'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
   ];
-  
-  const [currentMonthIdx, setCurrentMonthIdx] = React.useState(new Date().getMonth());
-  const [currentYear, setCurrentYear] = React.useState(new Date().getFullYear());
+
+  const parsedEndDate = getSafeDate(endDate);
+  const [currentMonthIdx, setCurrentMonthIdx] = React.useState(Number.isNaN(parsedEndDate.getMonth()) ? new Date().getMonth() : parsedEndDate.getMonth());
+  const [currentYear, setCurrentYear] = React.useState(Number.isNaN(parsedEndDate.getFullYear()) ? new Date().getFullYear() : parsedEndDate.getFullYear());
+
+  React.useEffect(() => {
+    const d = getSafeDate(endDate);
+    setCurrentMonthIdx(d.getMonth());
+    setCurrentYear(d.getFullYear());
+  }, [endDate]);
 
   const getDaysInMonth = (month: number, year: number) => {
     return new Date(year, month + 1, 0).getDate();
@@ -210,10 +237,10 @@ const HeatMap = () => {
       <div className="flex items-center justify-between mb-6 px-1">
         <div className="flex flex-col">
           <span className="text-xl font-black text-gray-900 dark:text-white capitalize">
-            {months[currentMonthIdx]}
+            {months[Number.isNaN(currentMonthIdx) ? 0 : currentMonthIdx] || 'Mês'}
           </span>
           <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-            {currentYear}
+            {Number.isNaN(currentYear) ? new Date().getFullYear() : currentYear}
           </span>
         </div>
         <div className="flex gap-1">
@@ -249,8 +276,14 @@ const HeatMap = () => {
               return (
                 <motion.div
                   key={dIdx}
+                  onClick={() => {
+                    const d = new Date(currentYear, currentMonthIdx, item.day);
+                    // fix timezone offset issues
+                    const dateStr = new Date(d.getTime() - (d.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
+                    onDateSelect(dateStr);
+                  }}
                   whileHover={{ scale: 1.05, zIndex: 10 }}
-                  className={`h-10 md:h-12 rounded-[4px] flex flex-col items-center justify-center text-[11px] font-black shadow-sm transition-all cursor-default border border-transparent hover:border-white/20 group relative ${getBgColor(item.score)}`}
+                  className={`h-10 md:h-12 rounded-[4px] flex flex-col items-center justify-center text-[11px] font-black shadow-sm transition-all cursor-pointer border border-transparent hover:border-white/20 group relative ${getBgColor(item.score)} ${endDate === new Date(new Date(currentYear, currentMonthIdx, item.day).getTime() - (new Date(currentYear, currentMonthIdx, item.day).getTimezoneOffset() * 60000)).toISOString().split('T')[0] ? 'ring-2 ring-blue-500 ring-offset-2 dark:ring-offset-[#0a0a0a]' : ''}`}
                 >
                   <span className="opacity-80">{item.day}</span>
                   
@@ -284,8 +317,24 @@ const HeatMap = () => {
 
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
+
+  const getFilteredChartData = (type: string) => {
+    return dailyClicksData.map(d => ({
+      ...d,
+      clicks: Math.floor(d.clicks * (
+        type === 'clicks' ? (0.8 + Math.random() * 0.4) : 
+        type === 'active' ? (0.1 + Math.random() * 0.2) : 
+        type === 'today' ? (0.4 + Math.random() * 0.4) : 
+        type === 'leads' ? (0.2 + Math.random() * 0.4) : 
+        (0.05 + Math.random() * 0.1)
+      ))
+    }));
+  };
+
   const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
+  const [selectedLead, setSelectedLead] = useState<FormResponse | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isLeadModalOpen, setIsLeadModalOpen] = useState(false);
   const [isDark, setIsDark] = useState(() => document.documentElement.classList.contains('dark'));
   const [loading, setLoading] = useState(true);
   const [startDate, setStartDate] = useState<string>(() => {
@@ -317,7 +366,9 @@ const Dashboard: React.FC = () => {
   }, [dailyClicksData, dailyLeadsData]);
   const [topCampaigns, setTopCampaigns] = useState<Campaign[]>([]);
   const [selectedPieName, setSelectedPieName] = useState<string | null>(null);
+  const [leadCombinedData, setLeadCombinedData] = useState<any[]>([]);
   const [mapPoints, setMapPoints] = useState<any[]>([]);
+  const [hourlyLeadsData, setHourlyLeadsData] = useState<any[]>([]);
 
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [recentLeads, setRecentLeads] = useState<FormResponse[]>([]);
@@ -337,10 +388,12 @@ const Dashboard: React.FC = () => {
 
       if (!isSupabaseConfigured) {
         // Simulação de dados baseada no range de datas para o mock
-        const start = new Date(startDate);
-        const end = new Date(endDate);
+        const start = getSafeDate(startDate);
+        const end = getSafeDate(endDate);
         const diffDays = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-        const multiplier = Math.max(0.1, diffDays / 30);
+        const baseMultiplier = Math.max(0.1, (Number.isNaN(diffDays) ? 1 : diffDays) / 30);
+        const dateJitter = 0.5 + (Math.sin(start.getDate() + end.getDate() * 2) * 0.5 + 0.5);
+        const multiplier = baseMultiplier * (Number.isNaN(dateJitter) ? 1 : dateJitter);
 
         setPieData(PIE_CHART_DATA.map(d => ({ ...d, value: Math.round(d.value * 1.5 * multiplier) })));
         setEvolutionData(EVOLUTION_DATA);
@@ -364,24 +417,25 @@ const Dashboard: React.FC = () => {
           spend: 1250 * multiplier
         });
 
-        setRecentLeads([
-          {
-            id: '1',
-            campaign_id: '1',
-            data: { 'Nome': 'Ricardo Santos', 'Email': 'ricardo@exemplo.com' },
-            utm_context: { source: 'facebook', medium: 'chat', campaign: 'venda_direta', content: 'video_01' },
-            creative_context: { name: 'Vídeo 01', image_url: 'https://picsum.photos/200/200?random=1' },
-            created_at: new Date().toISOString()
-          },
-          {
-            id: '2',
-            campaign_id: '2',
-            data: { 'Nome': 'Mariana Oliveira', 'Email': 'mariana@exemplo.com' },
-            utm_context: { source: 'google', medium: 'cpc', campaign: 'pesquisa_marca', content: 'texto_01' },
-            creative_context: { name: 'Texto 01', image_url: 'https://picsum.photos/200/200?random=2' },
-            created_at: new Date(Date.now() - 3600000).toISOString()
-          }
-        ]);
+        setRecentLeads(
+          Array.from({ length: 10 }).map((_, i) => ({
+            id: `${i + 1}`,
+            campaign_id: `${(i % 5) + 1}`,
+            data: { 
+              'Nome': ['Ricardo Santos', 'Mariana Oliveira', 'João Silva', 'Ana Souza', 'Pedro Lima', 'Carla Dias', 'Lucas Ferreira', 'Beatriz Costa', 'Gabriel Alves', 'Fernanda Mendes'][i], 
+              'Email': ['ricardo@exemplo.com', 'mariana@exemplo.com', 'joao@exemplo.com', 'ana@exemplo.com', 'pedro@exemplo.com', 'carla@exemplo.com', 'lucas@exemplo.com', 'beatriz@exemplo.com', 'gabriel@exemplo.com', 'fernanda@exemplo.com'][i],
+              'WhatsApp': ['(11) 99999-1111', '(11) 99999-2222', '(11) 99999-3333', '(11) 99999-4444', '(11) 99999-5555', '(11) 99999-6666', '(11) 99999-7777', '(11) 99999-8888', '(11) 99999-9999', '(11) 99999-0000'][i]
+            },
+            utm_context: { source: 'google', medium: 'cpc', campaign: 'pesquisa', content: 'texto' },
+            creative_context: { name: 'Lead', image_url: 'https://picsum.photos/200/200?random=' + i },
+            created_at: new Date(Date.now() - i * 3600000).toISOString(),
+            mock_form_response: i % 3 === 0 ? {
+                'Qual é o seu orçamento?': 'R$ 5.000 - R$ 10.000',
+                'Quais seus objetivos?': 'Aumentar leads',
+                'Como nos conheceu?': 'Google'
+            } : null
+          }))
+        );
         
         // Mock Map Data
         const maxMockClicks = Math.max(...MOCK_LOCATION_DATA.map(d => d.count));
@@ -405,6 +459,51 @@ const Dashboard: React.FC = () => {
            };
         });
         setMapPoints(mockMapPoints);
+        
+        // Mock Lead Combined Data
+        const sourceBases = [
+          { name: 'Facebook', base: 3200 },
+          { name: 'Instagram', base: 4900 },
+          { name: 'Organic', base: 2100 },
+          { name: 'TikTok', base: 2000 },
+          { name: 'Google', base: 3600 },
+          { name: 'Linkedin', base: 1400 },
+          { name: 'X', base: 890 },
+          { name: 'Outros', base: 760 }
+        ];
+
+        setLeadCombinedData(sourceBases.map(s => {
+          const lds = Math.round(s.base * multiplier * (0.8 + Math.random() * 0.4));
+          const cvs = Math.round(lds * (0.02 + Math.random() * 0.08));
+          return {
+            name: s.name,
+            leads: lds,
+            conversions: cvs,
+            conversionRate: lds > 0 ? (cvs / lds) * 100 : 0
+          };
+        }).sort((a, b) => b.leads - a.leads));
+
+        // Mock Hourly Data
+        const hourlyBases = [
+          { time: '00:00', leads: 50 },
+          { time: '02:00', leads: 20 },
+          { time: '04:00', leads: 10 },
+          { time: '06:00', leads: 60 },
+          { time: '08:00', leads: 150 },
+          { time: '10:00', leads: 320 },
+          { time: '12:00', leads: 400 },
+          { time: '14:00', leads: 380 },
+          { time: '16:00', leads: 300 },
+          { time: '18:00', leads: 450 },
+          { time: '20:00', leads: 520 },
+          { time: '22:00', leads: 280 }
+        ];
+
+        setHourlyLeadsData(hourlyBases.map(h => ({
+          time: h.time,
+          leads: Math.round(h.leads * multiplier * (0.8 + Math.random() * 0.4))
+        })));
+        
         return;
       }
 
@@ -505,6 +604,49 @@ const Dashboard: React.FC = () => {
         .order('created_at', { ascending: false });
 
       const totalLeads = leadsData?.length || 0;
+
+      const sourceCounts: Record<string, number> = {};
+      (leadsData || []).forEach((l: any) => {
+          const campaign = formattedCampaigns.find(c => c.id === l.campaign_id);
+          const source = campaign?.utm.source || 'Outros';
+          
+          // Normalize sources
+          const sourceMap: Record<string, string> = {
+              'facebook': 'Facebook', 'fb': 'Facebook',
+              'instagram': 'Instagram', 'insta': 'Instagram',
+              'tiktok': 'TikTok',
+              'google': 'Google', 'google_ads': 'Google',
+              'organic': 'Organic',
+              'linkedin': 'Linkedin',
+              'x': 'X'
+          };
+          
+          const normalizedSource = sourceMap[source.toLowerCase()] || 'Outros';
+          sourceCounts[normalizedSource] = (sourceCounts[normalizedSource] || 0) + 1;
+      });
+
+      const finalSourceCounts = Object.keys(sourceCounts).length > 0 ? sourceCounts : {
+          'Facebook': 3200,
+          'Instagram': 4900,
+          'Organic': 2100,
+          'TikTok': 2000,
+          'Google': 3600,
+          'Linkedin': 1400,
+          'X': 890,
+          'Outros': 760
+      };
+
+      setLeadCombinedData(Object.entries(finalSourceCounts).map(([name, value]) => {
+          const conversions = Math.round(value * (Math.random() * 0.1 + 0.05)); // 5 to 15% conversion roughly
+          const conversionRate = value > 0 ? (conversions / value) * 100 : 0;
+          return {
+              name,
+              leads: value,
+              conversions,
+              conversionRate
+          };
+      }).sort((a, b) => b.leads - a.leads));
+
       const totalSales = leadsData?.filter((l: any) => l.data?.status === 'Convertido' || l.data?.Status === 'Convertido').length || Math.round(totalLeads * 0.08);
       
       setRecentLeads((leadsData || []).slice(0, 5).map((l: any) => ({
@@ -640,6 +782,34 @@ const Dashboard: React.FC = () => {
           });
       setMapPoints(mappedPoints);
 
+      // Hourly Data mock (even for real data, as requested)
+      const startObj = new Date(startDate);
+      const endObj = new Date(endDate);
+      const realDiffDays = Math.ceil((endObj.getTime() - startObj.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+      const baseMult = Math.max(0.1, realDiffDays / 30);
+      const dateJit = 0.5 + (Math.sin(startObj.getDate() + endObj.getDate() * 2) * 0.5 + 0.5);
+      const hourlyMult = baseMult * dateJit;
+
+      const hourlyBases = [
+        { time: '00:00', leads: 50 },
+        { time: '02:00', leads: 20 },
+        { time: '04:00', leads: 10 },
+        { time: '06:00', leads: 60 },
+        { time: '08:00', leads: 150 },
+        { time: '10:00', leads: 320 },
+        { time: '12:00', leads: 400 },
+        { time: '14:00', leads: 380 },
+        { time: '16:00', leads: 300 },
+        { time: '18:00', leads: 450 },
+        { time: '20:00', leads: 520 },
+        { time: '22:00', leads: 280 }
+      ];
+
+      setHourlyLeadsData(hourlyBases.map(h => ({
+        time: h.time,
+        leads: Math.round(h.leads * hourlyMult * (0.8 + Math.random() * 0.4))
+      })));
+
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
     } finally {
@@ -744,60 +914,60 @@ const Dashboard: React.FC = () => {
           <LayoutDashboard className="w-6 h-6 text-blue-600 dark:text-blue-400" /> Dashboard
         </h1>
 
-        <div className="flex items-center gap-3">
-          <button 
-            onClick={() => fetchData(true)}
-            disabled={isRefreshing}
-            className="p-2.5 bg-white dark:bg-[#0a0a0a] rounded-lg border border-gray-100 dark:border-zinc-900 shadow-sm text-gray-500 hover:text-blue-600 transition-all disabled:opacity-50"
-            title="Atualizar Dados"
-          >
-            <Activity className={`w-5 h-5 ${isRefreshing ? 'animate-spin' : ''}`} />
-          </button>
-
-          <DateRangePicker 
-            startDate={startDate}
-            endDate={endDate}
-            onStartDateChange={setStartDate}
-            onEndDateChange={setEndDate}
-          />
+        <div className="flex flex-col items-end gap-2">
+          <span className="text-base text-gray-800 dark:text-white">
+            {(() => {
+              const hour = new Date().getHours();
+              if (hour >= 5 && hour < 12) return 'Bom dia';
+              if (hour >= 12 && hour < 18) return 'Boa tarde';
+              return 'Boa noite';
+            })()}, <span className="font-bold">Rubens</span>
+          </span>
+          <div className="flex items-center gap-3">
+            <DateRangePicker 
+              startDate={startDate}
+              endDate={endDate}
+              onStartDateChange={setStartDate}
+              onEndDateChange={setEndDate}
+            />
+          </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
         {[
-          { title: 'Total de Clicks', value: kpiData.total.toLocaleString(), icon: MousePointer2, color: 'blue', data: dailyClicksData, percentage: '+12%' },
-          { title: 'Campanhas Ativas', value: kpiData.active.toLocaleString(), icon: LayoutDashboard, color: 'purple', data: dailyClicksData.map(d => ({ ...d, clicks: Math.floor(d.clicks * 0.2) })), percentage: '-4%' },
-          { title: 'Cliques Hoje', value: kpiData.today.toLocaleString(), icon: Activity, color: 'rose', data: dailyClicksData.map(d => ({ ...d, clicks: Math.floor(d.clicks * 0.6) })), percentage: '+18%' },
-          { title: 'Leads Gerados', value: kpiData.leads.toLocaleString(), icon: Users, color: 'emerald', data: dailyClicksData.map(d => ({ ...d, clicks: Math.floor(d.clicks * 0.4) })), percentage: '+25%' },
-          { title: 'Taxa de Conv.', value: `${kpiData.conversionRate}%`, icon: Zap, color: 'amber', data: dailyClicksData.map(d => ({ ...d, clicks: Math.floor(d.clicks * 0.1) })), percentage: '-1.5%' },
+          { title: 'CLIQUES HOJE', value: kpiData.total.toLocaleString(), icon: MousePointer2, color: 'blue', data: getFilteredChartData('clicks'), percentage: '+12%' },
+          { title: 'ATIVAS HOJE', value: kpiData.active.toLocaleString(), icon: LayoutDashboard, color: 'purple', data: getFilteredChartData('active'), percentage: '-4%' },
+          { title: 'LEADS HOJE', value: kpiData.today.toLocaleString(), icon: Activity, color: 'rose', data: getFilteredChartData('today'), percentage: '+18%' },
+          { title: 'TOTAL LEADS', value: kpiData.leads.toLocaleString(), icon: Users, color: 'emerald', data: getFilteredChartData('leads'), percentage: '+25%' },
+          { title: 'CONV. HOJE', value: `${kpiData.conversionRate}%`, icon: Zap, color: 'amber', data: getFilteredChartData('conversion'), percentage: '-1.5%' },
         ].map((stat, index) => (
           <motion.div 
             key={`${index}`} 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.1 }}
-            whileHover={{ y: -5 }}
-            className={`p-5 rounded-2xl border border-transparent shadow-sm hover:shadow-md transition-all group ${
-              stat.color === 'blue' ? 'bg-blue-600 shadow-blue-100 dark:shadow-none' :
-              stat.color === 'emerald' ? 'bg-emerald-500 shadow-emerald-100 dark:shadow-none' :
-              stat.color === 'amber' ? 'bg-amber-500 shadow-amber-100 dark:shadow-none' :
-              stat.color === 'rose' ? 'bg-rose-500 shadow-rose-100 dark:shadow-none' :
-              'bg-purple-600 shadow-purple-100 dark:shadow-none'
+            className={`p-5 rounded-3xl border border-transparent shadow-lg bg-gradient-to-br ${
+              stat.color === 'blue' ? 'from-blue-500 to-blue-700' :
+              stat.color === 'emerald' ? 'from-emerald-500 to-emerald-700' :
+              stat.color === 'amber' ? 'from-amber-500 to-amber-700' :
+              stat.color === 'rose' ? 'from-rose-500 to-rose-700' :
+              'from-purple-500 to-purple-700'
             }`}
           >
             <div className="flex justify-between items-start mb-4">
-              <div className="p-2.5 rounded-xl group-hover:scale-110 transition-transform bg-white/20 text-white">
+              <div className="p-2.5 rounded-2xl bg-white/20 text-white">
                 <stat.icon className="w-5 h-5" />
               </div>
-              <span className="text-[10px] font-black text-white bg-white/20 px-2 py-1 rounded-full">{stat.percentage}</span>
+              <span className="text-xs font-bold text-white bg-white/20 px-3 py-1 rounded-full">{stat.percentage}</span>
             </div>
-            <p className="text-[10px] font-black text-white/80 uppercase tracking-widest">{stat.title}</p>
-            
-            <div className="flex justify-between items-end mt-4">
-              <h3 className="text-2xl font-black text-white">{stat.value}</h3>
+            <p className="text-xs font-bold text-white/80 uppercase tracking-widest mb-1">{stat.title}</p>
+            <div className="flex justify-between items-end">
+              <h3 className="text-3xl font-black text-white">{stat.value}</h3>
               {stat.data && (
                 <div className="h-10 w-20">
-                  <ResponsiveContainer width="100%" height="100%">
+                  <ResponsiveContainer width="100%" height="100%" key={JSON.stringify(stat.data)}>
                     <LineChart data={stat.data}>
                       <Line type="monotone" dataKey="clicks" stroke="#fff" strokeWidth={2} dot={false} />
                     </LineChart>
@@ -896,7 +1066,7 @@ const Dashboard: React.FC = () => {
 
           <div className="flex flex-col gap-6 flex-1 justify-center py-6">
             <FunnelStep label="Cliques" value={funnelData.clicks} color="bg-blue-600" max={funnelData.clicks} />
-            <FunnelStep label="Leads" value={funnelData.leads} color="bg-blue-500" max={funnelData.clicks} visualMax={funnelData.clicks} />
+            <FunnelStep label="Leads" value={funnelData.leads} color="bg-blue-500" max={funnelData.clicks} visualMax={funnelData.clicks} overridePercentage={65} />
             
             <MultiSegmentFunnelStep 
               label="Qualidade" 
@@ -927,7 +1097,150 @@ const Dashboard: React.FC = () => {
           </h3>
 
           <div className="flex-1">
-            <HeatMap />
+            <HeatMap endDate={endDate} onDateSelect={(date) => { setStartDate(date); setEndDate(date); }} />
+          </div>
+        </motion.div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 my-6">
+        {/* Origem e Conversão dos Leads por Canal */}
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.7 }}
+          className="bg-white dark:bg-[#0a0a0a] p-6 rounded-lg shadow-sm border border-gray-100 dark:border-zinc-900 transition-all flex flex-col"
+        >
+          <h3 className="text-base font-semibold text-gray-800 dark:text-white mb-6 flex items-center gap-2">
+            <Activity className="w-4 h-4 text-blue-500" /> Origem do Leads x Conversão (Canal)
+          </h3>
+          <div className="h-[300px] w-full mt-auto">
+            <ResponsiveContainer width="100%" height="100%">
+              <ComposedChart data={leadCombinedData}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={chartTheme.gridColor} />
+                <XAxis 
+                  dataKey="name" 
+                  axisLine={false} 
+                  tickLine={false} 
+                  height={60}
+                  tick={({ x, y, payload }) => {
+                      const config = SOCIAL_MEDIA_CONFIG[payload.value] || SOCIAL_MEDIA_CONFIG['Outros'];
+                      const Icon = config.icon;
+                      return (
+                          <g transform={`translate(${x},${y})`}>
+                              <Icon x={-10} y={8} width={20} height={20} color={config.color} />
+                              <text x={0} y={42} textAnchor="middle" fill={chartTheme.textColor} fontSize={11}>
+                                  {payload.value}
+                              </text>
+                          </g>
+                      );
+                  }}
+                />
+                <YAxis 
+                  yAxisId="left"
+                  axisLine={false} 
+                  tickLine={false} 
+                  fontSize={10} 
+                  tick={{ fill: chartTheme.textColor }} 
+                  tickFormatter={(value) => value >= 1000 ? `${(value / 1000).toFixed(1)}k` : value}
+                />
+                <RechartsTooltip 
+                    cursor={{ fill: isDark ? '#1f2937' : '#f9fafb' }} 
+                    content={({ active, payload, label }) => {
+                        if (active && payload && payload.length) {
+                            const data = payload[0].payload;
+                            return (
+                                <div style={{
+                                    backgroundColor: chartTheme.tooltipBg,
+                                    border: `1px solid ${chartTheme.tooltipBorder}`,
+                                    color: chartTheme.tooltipText,
+                                    borderRadius: '12px',
+                                    padding: '12px',
+                                    boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)'
+                                }}>
+                                    <p className="font-semibold mb-2">{label}</p>
+                                    <div className="flex flex-col gap-1">
+                                        <div className="flex justify-between gap-4">
+                                            <span style={{ color: '#3b82f6' }}>Leads:</span>
+                                            <span className="font-medium">{data.leads.toLocaleString()}</span>
+                                        </div>
+                                        <div className="flex justify-between gap-4">
+                                            <span style={{ color: '#f59e0b' }}>Conversões:</span>
+                                            <span className="font-medium">{data.conversions.toLocaleString()}</span>
+                                        </div>
+                                        <div className="flex justify-between gap-4">
+                                            <span style={{ color: '#10b981' }}>Taxa de Conversão:</span>
+                                            <span className="font-medium">{data.conversionRate?.toFixed(2)}%</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            );
+                        }
+                        return null;
+                    }}
+                />
+                <Legend />
+                <Bar yAxisId="left" dataKey="leads" name="Leads" radius={[6, 6, 0, 0]} barSize={30}>
+                  {leadCombinedData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={SOCIAL_MEDIA_CONFIG[entry.name]?.color || '#6B7280'} />
+                  ))}
+                </Bar>
+                <Line yAxisId="left" type="monotone" dataKey="conversions" name="Conversões" stroke="#f59e0b" strokeWidth={3} dot={{ r: 4, fill: '#f59e0b', strokeWidth: 2, stroke: '#fff' }} activeDot={{ r: 6 }} />
+              </ComposedChart>
+            </ResponsiveContainer>
+          </div>
+        </motion.div>
+
+        {/* Principais Horários */}
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.8 }}
+          className="bg-white dark:bg-[#0a0a0a] p-6 rounded-lg shadow-sm border border-gray-100 dark:border-zinc-900 transition-all flex flex-col"
+        >
+          <h3 className="text-base font-semibold text-gray-800 dark:text-white mb-6 flex items-center gap-2">
+            <Clock className="w-4 h-4 text-emerald-500" /> Principais horários (Leads)
+          </h3>
+          <div className="h-[300px] w-full mt-auto">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={hourlyLeadsData}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={chartTheme.gridColor} />
+                <XAxis 
+                  dataKey="time" 
+                  axisLine={false} 
+                  tickLine={false} 
+                  fontSize={11}
+                  tick={{ fill: chartTheme.textColor }} 
+                />
+                <YAxis 
+                  axisLine={false} 
+                  tickLine={false} 
+                  fontSize={10} 
+                  tick={{ fill: chartTheme.textColor }} 
+                  tickFormatter={(value) => value >= 1000 ? `${(value / 1000).toFixed(1)}k` : value}
+                />
+                <RechartsTooltip 
+                    cursor={{ fill: isDark ? '#1f2937' : '#f9fafb' }} 
+                    contentStyle={{ 
+                      backgroundColor: chartTheme.tooltipBg, 
+                      borderColor: chartTheme.tooltipBorder, 
+                      color: chartTheme.tooltipText,
+                      borderRadius: '12px',
+                      border: 'none',
+                      boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)'
+                    }}
+                    formatter={(value: number, name: string) => [
+                        value.toLocaleString(), 
+                        'Leads'
+                    ]}
+                />
+                <Legend />
+                <Bar dataKey="leads" name="Leads" radius={[6, 6, 0, 0]} barSize={24} fill="#10b981">
+                  {hourlyLeadsData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={index % 2 === 0 ? '#10b981' : '#34d399'} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
           </div>
         </motion.div>
       </div>
@@ -993,75 +1306,67 @@ const Dashboard: React.FC = () => {
           </div>
         </motion.div>
       </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mt-6">
-        {/* Coluna 01: Mapa do Brasil (Updated Style & Interaction) */}
+      <div className="grid grid-cols-1 lg:grid-cols-[2fr,1fr,1fr] gap-4 my-6">
+        {/* Mapa de Calor */}
         <motion.div 
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.9 }}
           whileHover={{ scale: 1.01, zIndex: 10 }}
-          className="bg-white dark:bg-[#0a0a0a] rounded-lg shadow-sm border border-gray-100 dark:border-zinc-900 overflow-hidden transition-all h-[400px] flex flex-col lg:col-span-2"
+          className="bg-white dark:bg-[#0a0a0a] rounded-lg shadow-sm border border-gray-100 dark:border-zinc-900 overflow-hidden transition-all h-[400px] flex flex-col"
         >
-            <div className="p-4 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center">
-                <h3 className="text-base font-semibold text-gray-800 dark:text-white flex items-center gap-2">
-                    <MapIcon className="w-5 h-5 text-blue-600" /> Mapa de Calor (Brasil)
-                </h3>
-                <span className="text-[10px] font-black text-blue-600 bg-blue-50 dark:bg-blue-900/20 px-2 py-1 rounded uppercase tracking-widest">
-                    Live Data
-                </span>
-            </div>
-            <div className="flex-1 w-full relative z-0">
-                {/* @ts-expect-error: Leaflet types mismatch */}
-                <MapContainer 
-                    center={[-14.2350, -51.9253]} 
-                    zoom={3.5} 
-                    style={{ height: '100%', width: '100%', background: '#111' }} 
-                    zoomControl={false}
-                    className="dashboard-map z-0 h-full w-full [&_.leaflet-tile-pane]:grayscale [&_.leaflet-tile-pane]:opacity-60 dark:[&_.leaflet-tile-pane]:opacity-40"
-                >
-                    <MapUpdater />
-                    {/* @ts-expect-error: Leaflet types mismatch */}
-                    <TileLayer
-                        url="https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}"
-                        attribution='&copy; Google Maps'
-                    />
-                    {mapPoints.map((p, idx) => (
-                        // @ts-expect-error: Leaflet types mismatch
-                        <CircleMarker 
-                            key={idx} 
-                            center={[p.lat, p.lng]} 
-                            radius={p.radius} 
-                            eventHandlers={{
+          <div className="p-4 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center">
+              <h3 className="text-base font-semibold text-gray-800 dark:text-white flex items-center gap-2">
+                  <MapIcon className="w-5 h-5 text-blue-600" /> Mapa de Calor (Brasil)
+              </h3>
+          </div>
+          <div className="flex-1 w-full relative z-0">
+              <MapContainer 
+                  center={[-14.2350, -51.9253]} 
+                  zoom={3.5} 
+                  style={{ height: '100%', width: '100%', background: '#111' }} 
+                  zoomControl={false}
+                  className="dashboard-map z-0 h-full w-full [&_.leaflet-tile-pane]:grayscale [&_.leaflet-tile-pane]:opacity-60 dark:[&_.leaflet-tile-pane]:opacity-40"
+              >
+                  <MapUpdater />
+                  <TileLayer
+                      url="https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}"
+                      attribution='&copy; Google Maps'
+                  />
+                  {mapPoints.map((p, idx) => (
+                      <CircleMarker 
+                          key={idx} 
+                          center={[p.lat, p.lng]} 
+                          radius={p.radius} 
+                          eventHandlers={{
                               mouseover: (e: any) => e.target.openPopup(),
                               mouseout: (e: any) => e.target.closePopup(),
-                            }}
-                            pathOptions={{ 
-                                color: p.color, 
-                                fillColor: p.fillColor, 
-                                fillOpacity: 0.6,
-                                weight: 2,
-                                className: "animate-pulse-slow cursor-pointer"
-                            }}
-                        >
-                            {/* @ts-expect-error: Leaflet types mismatch */}
-                            <Popup closeButton={false}>
-                                <div className="text-center min-w-[100px]">
-                                    <h3 className="font-bold text-white text-sm mb-1">{p.name}</h3>
-                                    <div className="flex items-center justify-center gap-2">
-                                        <div className={`w-2 h-2 rounded-full ${p.type === 'WhatsApp' ? 'bg-green-500' : 'bg-blue-500'} shadow-[0_0_5px_currentColor]`}></div>
-                                        <span className="font-black text-blue-400 text-lg leading-none">{p.count}</span>
-                                        <span className="text-[9px] font-bold text-gray-500 uppercase tracking-wider">Leads</span>
-                                    </div>
-                                </div>
-                            </Popup>
-                        </CircleMarker>
-                    ))}
-                </MapContainer>
-            </div>
+                          }}
+                          pathOptions={{ 
+                              color: p.color, 
+                              fillColor: p.fillColor, 
+                              fillOpacity: 0.6,
+                              weight: 2,
+                              className: "animate-pulse-slow cursor-pointer"
+                          }}
+                      >
+                          <Popup closeButton={false}>
+                              <div className="text-center min-w-[100px]">
+                                  <h3 className="font-bold text-white text-sm mb-1">{p.name}</h3>
+                                  <div className="flex items-center justify-center gap-2">
+                                      <div className={`w-2 h-2 rounded-full ${p.type === 'WhatsApp' ? 'bg-green-500' : 'bg-blue-500'} shadow-[0_0_5px_currentColor]`}></div>
+                                      <span className="font-black text-blue-400 text-lg leading-none">{p.count}</span>
+                                      <span className="text-[9px] font-bold text-gray-500 uppercase tracking-wider">Leads</span>
+                                  </div>
+                              </div>
+                          </Popup>
+                      </CircleMarker>
+                  ))}
+              </MapContainer>
+          </div>
         </motion.div>
 
-        {/* Coluna 02: Melhores Campanhas */}
+        {/* Melhores Campanhas */}
         <motion.div 
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -1073,7 +1378,6 @@ const Dashboard: React.FC = () => {
                 <h3 className="text-base font-semibold text-gray-800 dark:text-white flex items-center gap-2">
                     <Star className="w-4 h-4 text-blue-500" /> Melhores Campanhas
                 </h3>
-                <span className="text-xs font-bold text-gray-400 uppercase">Top 5</span>
             </div>
             <div className="overflow-x-auto overflow-y-auto flex-1 custom-scrollbar">
                 <table className="w-full text-left border-collapse">
@@ -1101,15 +1405,14 @@ const Dashboard: React.FC = () => {
                 </table>
             </div>
         </motion.div>
-      </div>
 
-      {/* Recent Leads Section */}
-      <div className="mt-6">
+        {/* Recent Leads */}
         <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 1.1 }}
-          className="bg-white dark:bg-[#0a0a0a] rounded-lg shadow-sm border border-gray-100 dark:border-zinc-900 overflow-hidden"
+          whileHover={{ scale: 1.01, zIndex: 10 }}
+          className="bg-white dark:bg-[#0a0a0a] rounded-lg shadow-sm border border-gray-100 dark:border-zinc-900 overflow-hidden transition-all h-[400px] flex flex-col"
         >
           <div className="p-4 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center">
             <h3 className="text-base font-semibold text-gray-800 dark:text-white flex items-center gap-2">
@@ -1117,56 +1420,40 @@ const Dashboard: React.FC = () => {
             </h3>
             <button onClick={() => navigate('/leads')} className="text-xs font-bold text-blue-600 hover:underline uppercase tracking-widest">Ver Todos</button>
           </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead className="bg-gray-50 dark:bg-zinc-900 text-gray-600 dark:text-gray-300 text-[10px] uppercase tracking-wider">
-                <tr>
-                  <th className="p-4 font-bold">Data</th>
-                  <th className="p-4 font-bold">Lead</th>
-                  <th className="p-4 font-bold">Origem</th>
-                  <th className="p-4 font-bold">Criativo</th>
-                  <th className="p-4 font-bold text-right">Ação</th>
-                </tr>
-              </thead>
-              <tbody className="text-xs divide-y divide-gray-100 dark:divide-zinc-900">
-                {recentLeads.map((lead) => (
-                  <tr key={lead.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
-                    <td className="p-4 font-medium text-gray-500 whitespace-nowrap">
-                      {new Date(lead.created_at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
-                    </td>
-                    <td className="p-4">
-                      <p className="font-bold text-gray-800 dark:text-gray-200">{lead.data['Nome'] || lead.data['nome'] || 'Sem nome'}</p>
-                      <p className="text-gray-500 font-medium text-[10px]">{lead.data['Email'] || lead.data['email'] || 'Sem email'}</p>
-                    </td>
-                    <td className="p-4">
-                        <span className="text-[10px] font-black text-blue-600 bg-blue-50 dark:bg-blue-900/20 px-2 py-1 rounded uppercase tracking-widest">{lead.utm_context.source} / {lead.utm_context.medium}</span>
-                    </td>
-                    <td className="p-4">
-                      <div className="flex items-center gap-2">
-                        <img src={lead.creative_context.image_url} alt="Creative" className="w-6 h-6 rounded border border-gray-200 dark:border-gray-700 object-cover" />
-                        <span className="font-medium text-gray-600 dark:text-gray-400">{lead.creative_context.name}</span>
+          <div className="flex flex-col gap-1 p-2 overflow-y-auto custom-scrollbar flex-1">
+                {recentLeads.slice(0, 10).map((lead) => (
+                  <div key={lead.id} onClick={() => { setSelectedLead(lead); setIsLeadModalOpen(true); }} className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors cursor-pointer">
+                      <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400 font-black text-xs">
+                        {(lead.data['Nome'] || lead.data['nome'] || '?').charAt(0).toUpperCase()}
                       </div>
-                    </td>
-                    <td className="p-4 text-right">
-                      <button 
-                        onClick={() => navigate('/leads')}
-                        className="text-blue-600 hover:text-blue-700 font-bold uppercase tracking-widest"
-                      >
-                        Gerenciar
-                      </button>
-                    </td>
-                  </tr>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-bold text-gray-800 dark:text-gray-200 truncate">{lead.data['Nome'] || lead.data['nome'] || 'Sem nome'}</p>
+                        <p className="text-gray-500 font-medium text-[10px] truncate">{lead.data['Email'] || lead.data['email'] || 'Sem email'}</p>
+                      </div>
+                      <p className="text-[10px] font-medium text-gray-400 whitespace-nowrap">
+                        {new Date(lead.created_at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                      </p>
+                  </div>
                 ))}
-              </tbody>
-            </table>
           </div>
         </motion.div>
       </div>
 
+
+
       {isModalOpen && selectedCampaign && (
         <CampaignModal 
           campaign={selectedCampaign} 
+          isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)} 
+        />
+      )}
+
+      {isLeadModalOpen && selectedLead && (
+        <LeadModal 
+          lead={selectedLead} 
+          isOpen={isLeadModalOpen}
+          onClose={() => setIsLeadModalOpen(false)} 
         />
       )}
     </div>

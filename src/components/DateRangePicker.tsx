@@ -119,7 +119,7 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
   return (
     <div className="flex flex-col sm:flex-row items-center gap-3" ref={dropdownRef}>
       {/* Quick Select Buttons */}
-      <div className="flex bg-white dark:bg-gray-900 rounded-xl p-1 border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden">
+      <div className="flex items-center bg-white dark:bg-gray-900 rounded-xl p-1 border border-gray-100 dark:border-gray-800 shadow-sm h-10">
         <button 
           onClick={setRangeToday}
           className="px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-gray-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-all"
@@ -147,17 +147,17 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
       </div>
 
       {/* Date Range Dropdown Trigger */}
-      <div className="relative">
+      <div className="relative h-10">
         <button
           onClick={() => setIsOpen(!isOpen)}
           className={`
-            flex items-center bg-white dark:bg-gray-900 rounded-xl border shadow-sm px-4 py-2 gap-3 transition-all outline-none
+            flex items-center bg-white dark:bg-gray-900 rounded-xl border shadow-sm px-4 py-2 gap-3 transition-all outline-none h-full
             ${isOpen ? 'border-blue-600 ring-4 ring-blue-50 dark:ring-blue-900/20' : 'border-gray-100 dark:border-gray-800 hover:border-blue-200 dark:hover:border-blue-900'}
           `}
         >
           <div className="flex items-center gap-2">
             <CalendarIcon className="w-4 h-4 text-blue-500" />
-            <div className="flex flex-col items-start">
+            <div className="flex flex-col items-start justify-center">
               <span className="text-[8px] font-black text-gray-400 uppercase leading-none">Período</span>
               <span className="text-xs font-bold text-gray-800 dark:text-gray-200">
                 {format(start, 'dd/MM/yyyy')} — {endDate ? format(end, 'dd/MM/yyyy') : '...'}

@@ -55,7 +55,7 @@ const CampaignModal: React.FC<CampaignModalProps> = ({ campaign, isOpen, onClose
       {/* Coluna Esquerda: Visual do Criativo + Links */}
       <div className="bg-white dark:bg-gray-900 p-6 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm space-y-6">
         <div className="space-y-3">
-          <label className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">VISUAL DO CRIATIVO</label>
+          <label className="text-xs font-semibold text-gray-500 uppercase tracking-normal">VISUAL DO CRIATIVO</label>
           <div className="rounded-xl overflow-hidden border border-gray-100 dark:border-gray-800 aspect-video bg-gray-50">
             <img src={campaign.imageUrl} alt={campaign.name} className="w-full h-full object-cover" />
           </div>
@@ -63,7 +63,7 @@ const CampaignModal: React.FC<CampaignModalProps> = ({ campaign, isOpen, onClose
 
         <div className="space-y-4">
           <div className="space-y-2">
-            <label className="text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-tight">Link de Acesso</label>
+            <label className="text-xs font-semibold text-gray-500 uppercase tracking-normal">Link de Acesso</label>
             <div className="flex gap-2">
               <div className="flex-1 bg-[#F9FAFB] dark:bg-gray-800 rounded-xl px-4 py-3.5 text-sm text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700 truncate">
                 {campaign.shortUrl}
@@ -241,29 +241,29 @@ const CampaignModal: React.FC<CampaignModalProps> = ({ campaign, isOpen, onClose
   return createPortal(
     <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
       <div className="absolute inset-0" onClick={onClose}></div>
-      <div className="relative bg-white dark:bg-gray-900 rounded-xl shadow-2xl w-full max-w-5xl max-h-[95vh] overflow-hidden border border-gray-100 dark:border-gray-800 flex flex-col transition-all">
+      <div className="relative bg-white dark:bg-gray-900 rounded-xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-hidden border border-gray-100 dark:border-gray-800 flex flex-col transition-all">
         
         {/* Header Section */}
-        <div className="px-10 py-8 border-b border-gray-50 dark:border-gray-800 bg-white dark:bg-gray-900 z-10">
-          <div className="flex justify-between items-center mb-8">
-            <h2 className="text-xl font-bold text-gray-700 dark:text-white uppercase tracking-tight">{campaign.name}</h2>
+        <div className="px-6 py-5 border-b border-gray-50 dark:border-gray-800 bg-white dark:bg-gray-900 z-10">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-lg font-semibold text-gray-700 dark:text-white tracking-tight">{campaign.name}</h2>
             <button onClick={onClose} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-all text-gray-400">
               <X className="w-5 h-5" />
             </button>
           </div>
 
-          <div className="flex bg-gray-50 dark:bg-gray-800/50 p-1.5 rounded-xl w-full">
+          <div className="flex bg-gray-50 dark:bg-gray-800/50 p-1 rounded-lg w-full">
             <button 
               onClick={() => setActiveTab('details')}
-              className={`flex-1 py-3 text-sm font-bold rounded-lg transition-all ${activeTab === 'details' ? 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
+              className={`flex-1 py-2 text-sm font-medium rounded-md transition-all ${activeTab === 'details' ? 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
             >
-              Informações da Campanha
+              Info
             </button>
             <button 
               onClick={() => setActiveTab('leads')}
-              className={`flex-1 py-3 text-sm font-bold rounded-lg transition-all ${activeTab === 'leads' ? 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
+              className={`flex-1 py-2 text-sm font-medium rounded-md transition-all ${activeTab === 'leads' ? 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
             >
-              Leads Capturados
+              Leads
             </button>
           </div>
         </div>

@@ -4,11 +4,27 @@ import { createPortal } from 'react-dom';
 import { 
   Users, Download, Webhook, Search, Filter, Mail, Phone, Calendar, 
   CheckCircle2, X, Loader2, Save, Activity, Globe, Zap, ExternalLink,
-  Star, MessageSquare, Tag, Clock, ChevronRight, MoreHorizontal, ClipboardList
+  Star, MessageSquare, Tag, Clock, ChevronRight, MoreHorizontal, ClipboardList,
+  Facebook, Instagram, Music, LayoutGrid, List
 } from 'lucide-react';
+import { LineChart, Line, ResponsiveContainer } from 'recharts';
+import { motion } from 'motion/react';
 import { Lead, FormResponse } from '../types';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { useRole } from '../hooks/useRole';
+
+const getSourceIcon = (source: string) => {
+  switch(source.toLowerCase()) {
+    case 'facebook': return <Facebook className="w-3 h-3 text-blue-600" />;
+    case 'instagram': return <Instagram className="w-3 h-3 text-pink-500" />;
+    case 'tiktok': return <img src="https://v4d.mz-css.net/72363bc2e4e6ae3d1f04fa8813b83acf/ebf794d02231ae3927e08af8cb0352f0/vecteezy_tiktok-png-icon_16716450.png" alt="TikTok" className="w-3 h-3" />;
+    case 'google':
+    case 'google ads': return <img src="https://v4d.mz-css.net/72363bc2e4e6ae3d1f04fa8813b83acf/c8458652917e1b282bfbfac9ea664aeb/vecteezy_google-search-icon-google-product-illustration_12871371.png" alt="Google" className="w-3 h-3" />;
+    case 'x':
+    case 'twitter': return <img src="https://v4d.mz-css.net/72363bc2e4e6ae3d1f04fa8813b83acf/73dd18a69543874078d876f43390b763/vecteezy_new-twitter-x-logo-twitter-icon-x-social-media-icon_42148611.png" alt="X" className="w-3 h-3" />;
+    default: return <Globe className="w-3 h-3 text-gray-500" />;
+  }
+}
 
 // Gerador de Dados Mocados
 const generateMockLeads = (count: number): Lead[] => {
@@ -36,6 +52,7 @@ const LeadsPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<'card' | 'list'>('card');
   const [leadFormResponse, setLeadFormResponse] = useState<FormResponse | null>(null);
   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
   
@@ -168,6 +185,17 @@ const LeadsPage: React.FC = () => {
     }
   };
 
+  const getFilteredChartData = (type: string) => {
+    return [
+      { name: 'Jan', clicks: Math.floor(Math.random() * 100) },
+      { name: 'Feb', clicks: Math.floor(Math.random() * 100) },
+      { name: 'Mar', clicks: Math.floor(Math.random() * 100) },
+      { name: 'Apr', clicks: Math.floor(Math.random() * 100) },
+      { name: 'May', clicks: Math.floor(Math.random() * 100) },
+      { name: 'Jun', clicks: Math.floor(Math.random() * 100) },
+    ];
+  };
+
   const filteredLeads = leads.filter(lead => 
     lead.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     lead.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -266,39 +294,47 @@ const LeadsPage: React.FC = () => {
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-blue-600 p-6 rounded-xl border-none shadow-sm relative overflow-hidden group">
-           <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-              <Users className="w-16 h-16 text-white" />
-           </div>
-           <div>
-              <p className="text-xs font-black text-blue-100 uppercase tracking-widest">Total de Leads</p>
-              <h3 className="text-3xl font-black text-white mt-2">{leads.length}</h3>
-           </div>
-        </div>
-
-        <div className="bg-emerald-600 p-6 rounded-xl border-none shadow-sm relative overflow-hidden group">
-           <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-              <Calendar className="w-16 h-16 text-white" />
-           </div>
-           <div>
-              <p className="text-xs font-black text-emerald-100 uppercase tracking-widest">Novos Hoje</p>
-              <h3 className="text-3xl font-black text-white mt-2">12</h3>
-           </div>
-        </div>
-
-        <div className={`p-6 rounded-xl border-none shadow-sm relative overflow-hidden group transition-colors ${webhookConfigured ? 'bg-blue-700' : 'bg-gray-500'}`}>
-           <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-              <Webhook className="w-16 h-16 text-white" />
-           </div>
-           <div>
-              <p className={`text-xs font-black uppercase tracking-widest ${webhookConfigured ? 'text-blue-100' : 'text-gray-200'}`}>Status da Integração</p>
-              <h3 className="text-3xl font-black text-white mt-2 flex items-center gap-2">
-                  {webhookConfigured ? 'Ativa' : 'Inativa'}
-                  {webhookConfigured && <span className="w-3 h-3 rounded-full bg-green-400 animate-pulse shadow-[0_0_10px_currentColor]"></span>}
-              </h3>
-           </div>
-        </div>
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+        {[
+          { title: 'TOTAL LEADS', value: leads.length.toLocaleString(), icon: Users, color: 'blue', data: getFilteredChartData('clicks'), percentage: '+12%' },
+          { title: 'LEADS HOJE', value: '12', icon: Activity, color: 'emerald', data: getFilteredChartData('today'), percentage: '+18%' },
+          { title: 'API', value: webhookConfigured ? 'Ativa' : 'Inativa', icon: Webhook, color: webhookConfigured ? 'purple' : 'gray', data: null, percentage: null },
+        ].map((stat, index) => (
+          <motion.div 
+            key={`${index}`} 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: index * 0.1 }}
+            className={`p-5 rounded-3xl border border-transparent shadow-lg bg-gradient-to-br ${
+              stat.color === 'blue' ? 'from-blue-500 to-blue-700' :
+              stat.color === 'emerald' ? 'from-emerald-500 to-emerald-700' :
+              stat.color === 'purple' ? 'from-purple-500 to-purple-700' :
+              'from-gray-500 to-gray-700'
+            }`}
+          >
+            <div className="flex justify-between items-start mb-4">
+              <div className="p-2.5 rounded-2xl bg-white/20 text-white">
+                <stat.icon className="w-5 h-5" />
+              </div>
+              {stat.percentage && (
+                  <span className="text-xs font-bold text-white bg-white/20 px-3 py-1 rounded-full">{stat.percentage}</span>
+              )}
+            </div>
+            <p className="text-xs font-bold text-white/80 uppercase tracking-widest mb-1">{stat.title}</p>
+            <div className="flex justify-between items-end">
+              <h3 className="text-3xl font-black text-white">{stat.value}</h3>
+              {stat.data && (
+                <div className="h-10 w-20">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={stat.data}>
+                      <Line type="monotone" dataKey="clicks" stroke="#fff" strokeWidth={2} dot={false} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
+            </div>
+          </motion.div>
+        ))}
       </div>
 
       {/* Main Content */}
@@ -319,16 +355,30 @@ const LeadsPage: React.FC = () => {
               <button className="p-2 bg-white dark:bg-black border border-gray-200 dark:border-zinc-900 rounded-lg text-gray-500 hover:bg-gray-50 dark:hover:bg-zinc-900 transition-colors">
                  <Filter className="w-4 h-4" />
               </button>
+               <div className="flex bg-gray-100 dark:bg-zinc-900 p-1 rounded-lg">
+                  <button 
+                    onClick={() => setViewMode('card')}
+                    className={`p-1.5 rounded ${viewMode === 'card' ? 'bg-white dark:bg-zinc-800 text-blue-600 shadow-sm' : 'text-gray-400'}`}
+                  >
+                    <LayoutGrid className="w-4 h-4" />
+                  </button>
+                  <button 
+                    onClick={() => setViewMode('list')}
+                    className={`p-1.5 rounded ${viewMode === 'list' ? 'bg-white dark:bg-zinc-800 text-blue-600 shadow-sm' : 'text-gray-400'}`}
+                  >
+                    <List className="w-4 h-4" />
+                  </button>
+               </div>
            </div>
         </div>
 
-        {/* Table */}
+        {/* Table/Cards */}
         <div className="overflow-x-auto min-h-[400px]">
           {loading ? (
             <div className="flex justify-center items-center h-64">
                <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
             </div>
-          ) : (
+          ) : viewMode === 'list' ? (
             <table className="w-full text-left border-collapse">
               <thead className="bg-gray-50 dark:bg-[#050505] text-[10px] font-black uppercase text-gray-500 dark:text-zinc-500 border-b border-gray-100 dark:border-zinc-900 tracking-wider sticky top-0 z-10">
                 <tr>
@@ -382,7 +432,7 @@ const LeadsPage: React.FC = () => {
                     <td className="p-4">
                        <div className="flex flex-col">
                           <span className="text-xs font-bold text-gray-700 dark:text-gray-200 flex items-center gap-1">
-                             <Globe className="w-3 h-3 text-blue-500" /> {lead.source}
+                             {getSourceIcon(lead.source)} {lead.source}
                           </span>
                           <span className="text-[10px] text-gray-400 truncate max-w-[150px] mt-0.5">{lead.campaign}</span>
                        </div>
@@ -399,6 +449,39 @@ const LeadsPage: React.FC = () => {
                 ))}
               </tbody>
             </table>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 p-4">
+                {filteredLeads.map((lead) => (
+                    <div key={lead.id} className="bg-white dark:bg-[#0a0a0a] border border-gray-100 dark:border-zinc-900 rounded-lg p-4 shadow-sm hover:border-blue-500 transition-colors cursor-pointer group" onClick={() => openLeadDetails(lead)}>
+                        <div className="flex justify-between items-start mb-2">
+                            <span className="font-bold text-gray-900 dark:text-white">{lead.name}</span>
+                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase ${
+                                lead.status === 'Novo' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' :
+                                lead.status === 'Contatado' ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400' :
+                                lead.status === 'Convertido' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
+                                'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                            }`}>
+                            {lead.status}
+                            </span>
+                        </div>
+                        <div className="space-y-1 mb-3">
+                            <div className="text-sm text-gray-500 dark:text-gray-400 truncate flex items-center gap-2">
+                                <Mail className="w-3 h-3 text-gray-400" /> {lead.email}
+                            </div>
+                            <div className="text-sm text-gray-500 dark:text-gray-400 truncate flex items-center gap-2">
+                                <Phone className="w-3 h-3 text-gray-400" /> {lead.phone}
+                            </div>
+                        </div>
+                        <div className="flex items-center justify-between text-xs text-gray-500 mb-2">
+                             <div className="flex items-center gap-1">{getSourceIcon(lead.source)} {lead.source}</div>
+                             <div className="text-gray-400 text-[10px]">{lead.campaign}</div>
+                        </div>
+                        <div className="w-full h-1 bg-gray-100 dark:bg-zinc-900 rounded-full mt-2">
+                            <div className={`h-full rounded-full ${lead.score > 70 ? 'bg-green-500' : lead.score > 40 ? 'bg-yellow-500' : 'bg-red-500'}`} style={{ width: `${lead.score}%` }} />
+                        </div>
+                    </div>
+                ))}
+            </div>
           )}
           {!loading && filteredLeads.length === 0 && (
              <div className="p-10 text-center text-gray-400 text-sm font-bold uppercase tracking-widest">
@@ -507,7 +590,7 @@ const LeadsPage: React.FC = () => {
                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                           <div className="bg-white dark:bg-gray-900 p-6 rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm space-y-4">
                              <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
-                                <Globe className="w-3 h-3" /> Origem do Tráfego
+                                {getSourceIcon(selectedLead.source)} Origem do Tráfego
                              </h4>
                              <div className="space-y-2">
                                 <div className="flex justify-between items-center">

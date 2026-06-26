@@ -8,6 +8,7 @@ import Dashboard from './components/Dashboard';
 import LocationPage from './components/LocationPage';
 import LinksPage from './components/LinksPage';
 import WhatsappPage from './components/WhatsappPage';
+import WebhookPage from './components/WebhookPage';
 import ReportsPage from './components/ReportsPage';
 import ProfilePage from './components/ProfilePage';
 import LandingPage from './components/LandingPage';
@@ -133,6 +134,7 @@ const App: React.FC = () => {
                   <Route path="/location" element={<LocationPage />} />
                   <Route path="/links" element={<LinksPage />} />
                   <Route path="/whatsapp" element={<WhatsappPage />} />
+                   <Route path="/webhook" element={<WebhookPage />} />
                   <Route path="/instagram" element={<InstagramPage />} />
                   <Route path="/cadastro" element={<CadastroPage />} />
                   <Route path="/reports" element={<ReportsPage />} />

@@ -1,11 +1,12 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { 
   MessageCircle, Plus, Copy, Trash2, Edit, Eye, 
   Settings, X, Loader2, Save, Upload, CheckCircle2, Phone as PhoneIcon, Target,
   ClipboardList, ListPlus, Link as LinkIcon, ChevronDown, CircleDot, Trash,
-  Type, AlignLeft, Mail, Phone, Calendar, Hash, CheckSquare, Layers, Radio
+  Type, AlignLeft, Mail, Phone, Calendar, Hash, CheckSquare, Layers, Radio, Filter, XCircle,
+  Instagram, Search, Facebook, Music, Globe, Linkedin, Twitter, Link
 } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { Campaign, WhatsappContact, FormField, FieldType, UserProfile } from '../types';
@@ -21,6 +22,17 @@ const WhatsappPage: React.FC = () => {
   const [isPhoneModalOpen, setIsPhoneModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'basic' | 'utm' | 'form' | 'qualification'>('basic');
+  const [isSourceOpen, setIsSourceOpen] = useState(false);
+  const [sourcePosition, setSourcePosition] = useState({ top: 0, left: 0, width: 0 });
+  const sourceButtonRef = useRef<HTMLButtonElement>(null);
+  
+  const toggleSource = () => {
+    if (!isSourceOpen && sourceButtonRef.current) {
+      const rect = sourceButtonRef.current.getBoundingClientRect();
+      setSourcePosition({ top: rect.bottom + window.scrollY + 4, left: rect.left + window.scrollX, width: rect.width });
+    }
+    setIsSourceOpen(!isSourceOpen);
+  };
   const [currentPreviewStep, setCurrentPreviewStep] = useState(0);
   
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
@@ -29,6 +41,10 @@ const WhatsappPage: React.FC = () => {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [profile, setProfile] = useState<UserProfile | null>(null);
+
+  // Filters
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
 
   // Form State
   const [formData, setFormData] = useState({
@@ -55,6 +71,83 @@ const WhatsappPage: React.FC = () => {
     fetchData();
   }, []);
 
+  // Add mock data if empty
+  useEffect(() => {
+    if (!loading && campaigns.length === 0) {
+      setCampaigns([
+          {
+            id: 'wa-mock-1',
+            name: 'Atendimento Site',
+            originalUrl: 'https://wa.me/5511999999999?text=Ol%C3%A1%2C%20vim%20pelo%20site!',
+            shortUrl: 'ltrk.io/wa-site',
+            clicks: 1250,
+            imageUrl: 'https://picsum.photos/200/200?random=101',
+            createdAt: new Date().toISOString(),
+            qrCodeUrl: 'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://wa.me/5511999999999',
+            utm: { source: 'site', medium: 'chat', campaign: 'institucional', content: 'botao_flutuante' },
+            creativeName: 'Botão Flutuante',
+            adSetName: 'Orgânico',
+            status: 'active'
+          },
+          {
+            id: 'wa-mock-2',
+            name: 'Promoção Black Friday',
+            originalUrl: 'https://wa.me/5511888888888?text=Quero%20a%20promo%C3%A7%C3%A3o!',
+            shortUrl: 'ltrk.io/wa-promo',
+            clicks: 3420,
+            imageUrl: 'https://picsum.photos/200/200?random=102',
+            createdAt: new Date(Date.now() - 86400000 * 2).toISOString(),
+            qrCodeUrl: 'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://wa.me/5511888888888',
+            utm: { source: 'instagram', medium: 'chat', campaign: 'promo_relampago', content: 'stories_video' },
+            creativeName: 'Stories Vídeo',
+            adSetName: 'Seguidores',
+            status: 'active',
+            formConfig: {
+               id: 'form-1',
+               title: 'Promoção Black Friday',
+               submitButtonText: 'Liberar Cupom',
+               fields: [
+                  { id: 'f1', label: 'Nome', type: 'text', required: true },
+                  { id: 'f2', label: 'E-mail', type: 'email', required: true }
+               ],
+               pixelId: '123456789'
+            }
+          },
+          {
+            id: 'wa-mock-3',
+            name: 'Webinar de Investimentos',
+            originalUrl: 'https://wa.me/5511999999999?text=Preciso%20de%20ajuda.',
+            shortUrl: 'ltrk.io/wa-help',
+            clicks: 850,
+            imageUrl: 'https://picsum.photos/200/200?random=103',
+            createdAt: new Date(Date.now() - 86400000 * 5).toISOString(),
+            qrCodeUrl: 'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://wa.me/5511999999999',
+            utm: { source: 'email', medium: 'chat', campaign: 'pos_venda', content: 'link_rodape' },
+            creativeName: 'Link Rodapé',
+            adSetName: 'Clientes',
+            status: 'active'
+          }
+      ]);
+    }
+  }, [loading, campaigns.length]);
+
+  const filteredCampaigns = campaigns.filter(c => {
+    const cDate = new Date(c.createdAt);
+    
+    if (startDate) {
+      const start = new Date(startDate);
+      if (cDate < start) return false;
+    }
+
+    if (endDate) {
+      const end = new Date(endDate);
+      end.setHours(23, 59, 59, 999); // Final do dia selecionado
+      if (cDate > end) return false;
+    }
+
+    return true;
+  });
+
   const fetchData = async () => {
     try {
       setLoading(true);
@@ -71,7 +164,8 @@ const WhatsappPage: React.FC = () => {
         setPhones([
           { id: '1', name: 'Atendimento Principal', phone_number: '5511999999999', user_id: 'demo', created_at: '' },
           { id: '2', name: 'Suporte VIP', phone_number: '5511888888888', user_id: 'demo', created_at: '' },
-          { id: '3', name: 'Comercial SP', phone_number: '5511777777777', user_id: 'demo', created_at: '' }
+          { id: '3', name: 'Comercial SP', phone_number: '5511777777777', user_id: 'demo', created_at: '' },
+          { id: '4', name: 'Vendas Diretas', phone_number: '5511666666666', user_id: 'demo', created_at: '' }
         ]);
 
         setCampaigns([
@@ -125,6 +219,20 @@ const WhatsappPage: React.FC = () => {
             utm: { source: 'email', medium: 'chat', campaign: 'pos_venda', content: 'link_rodape' },
             creativeName: 'Link Rodapé',
             adSetName: 'Clientes',
+            status: 'active'
+          },
+          {
+            id: 'wa-4',
+            name: 'Campanha Influencer',
+            originalUrl: 'https://wa.me/5511666666666?text=Vim%20pelo%20influencer!',
+            shortUrl: 'ltrk.io/wa-influencer',
+            clicks: 890,
+            imageUrl: 'https://picsum.photos/200/200?random=104',
+            createdAt: new Date(Date.now() - 86400000 * 3).toISOString(),
+            qrCodeUrl: 'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://wa.me/5511666666666',
+            utm: { source: 'instagram', medium: 'chat', campaign: 'influencer_parceria', content: 'video_ig' },
+            creativeName: 'Vídeo IG',
+            adSetName: 'Influencers',
             status: 'active'
           }
         ]);
@@ -446,11 +554,54 @@ const WhatsappPage: React.FC = () => {
         </div>
       </div>
 
+      {/* Date Filter Section */}
+      <div className="bg-white dark:bg-gray-900 p-4 rounded-lg border border-gray-200 dark:border-gray-800 flex flex-wrap items-center gap-4">
+         <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400 font-bold text-sm uppercase tracking-wider">
+            <Filter className="w-4 h-4" /> Filtros:
+         </div>
+         
+         <div className="flex items-center gap-2">
+            <div className="relative">
+               <Calendar className="absolute left-3 top-2.5 w-4 h-4 text-gray-400 pointer-events-none" />
+               <input 
+                  type="date" 
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className="pl-10 pr-4 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm font-medium text-gray-700 dark:text-gray-200 outline-none focus:ring-2 focus:ring-green-500 transition-all"
+               />
+            </div>
+            <span className="text-gray-400 font-bold text-xs">ATÉ</span>
+            <div className="relative">
+               <Calendar className="absolute left-3 top-2.5 w-4 h-4 text-gray-400 pointer-events-none" />
+               <input 
+                  type="date" 
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  className="pl-10 pr-4 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm font-medium text-gray-700 dark:text-gray-200 outline-none focus:ring-2 focus:ring-green-500 transition-all"
+               />
+            </div>
+         </div>
+
+         {(startDate || endDate) && (
+            <button 
+              onClick={() => { setStartDate(''); setEndDate(''); }}
+              className="ml-auto text-xs font-bold text-red-500 hover:text-red-600 flex items-center gap-1 bg-red-50 dark:bg-red-900/20 px-3 py-2 rounded-lg transition-colors"
+            >
+               <XCircle className="w-4 h-4" /> Limpar
+            </button>
+         )}
+      </div>
+
       {loading ? (
         <div className="flex justify-center py-20"><Loader2 className="w-12 h-12 animate-spin text-green-600" /></div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {campaigns.map((campaign) => (
+          {filteredCampaigns.length === 0 ? (
+             <div className="col-span-full py-16 text-center text-gray-400 dark:text-gray-500 flex flex-col items-center">
+                <Filter className="w-12 h-12 mb-4 opacity-30" />
+                <p className="font-bold text-sm uppercase tracking-wider">Nenhuma campanha encontrada neste período.</p>
+             </div>
+          ) : filteredCampaigns.map((campaign) => (
             <div key={campaign.id} className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 overflow-hidden flex flex-col transition-all group">
                 <div className="relative h-80 bg-gray-100 dark:bg-black">
                     <img src={campaign.imageUrl} alt="" className="w-full h-full object-cover" />
@@ -604,12 +755,67 @@ const WhatsappPage: React.FC = () => {
 
                 {activeTab === 'utm' && (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8 animate-in slide-in-from-left-4">
-                    {[
-                      { name: 'source', label: 'Origem (Source)', placeholder: 'facebook, google, email' },
-                      { name: 'medium', label: 'Conjunto (Medium)', placeholder: 'cpc, stories, feed' },
-                      { name: 'campaign', label: 'Campanha (Campaign)', placeholder: 'venda_quente_01' },
-                      { name: 'content', label: 'Criativo (Content)', placeholder: 'video_vsl_01' },
-                    ].map(field => (
+                    <div key="source" className="relative">
+                        <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2.5 px-1">Origem</label>
+                        <button 
+                          type="button" 
+                          ref={sourceButtonRef}
+                          onClick={toggleSource}
+                          className="w-full flex items-center justify-between px-5 py-4 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white font-bold outline-none shadow-sm" 
+                        >
+                          {formData.source ? (
+                             <span className="flex items-center gap-2">
+                               {(() => {
+                                 const Icon = [
+                                  { name: 'Instagram', icon: Instagram },
+                                  { name: 'Google', icon: Search },
+                                  { name: 'Facebook', icon: Facebook },
+                                  { name: 'TikTok', icon: Music },
+                                  { name: 'Organic', icon: Globe },
+                                  { name: 'Linkedin', icon: Linkedin },
+                                  { name: 'X', icon: Twitter },
+                                  { name: 'Outros', icon: Link }
+                                 ].find(o => o.name === formData.source)?.icon;
+                                 return Icon ? <Icon className="w-4 h-4" /> : null;
+                               })()}
+                               {formData.source}
+                             </span>
+                          ) : <span className="text-gray-400">Selecione a Origem</span>}
+                          <ChevronDown className="w-4 h-4 text-gray-400" />
+                        </button>
+                        {isSourceOpen && createPortal(
+                          <div 
+                            className="fixed bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl z-[9999]"
+                            style={{ top: `${sourcePosition.top}px`, left: `${sourcePosition.left}px`, width: `${sourcePosition.width}px` }}
+                          >
+                            {[
+                              { name: 'Instagram', icon: Instagram },
+                              { name: 'Google', icon: Search },
+                              { name: 'Facebook', icon: Facebook },
+                              { name: 'TikTok', icon: Music },
+                              { name: 'Organic', icon: Globe },
+                              { name: 'Linkedin', icon: Linkedin },
+                              { name: 'X', icon: Twitter },
+                              { name: 'Outros', icon: Link }
+                            ].map(opt => (
+                               <button
+                                  key={opt.name}
+                                  type="button"
+                                  className="w-full flex items-center gap-3 px-5 py-3 hover:bg-blue-50 dark:hover:bg-blue-900/20 text-gray-900 dark:text-white text-left"
+                                  onClick={() => {
+                                      setFormData(prev => ({...prev, source: opt.name}));
+                                      setIsSourceOpen(false);
+                                  }}
+                               >
+                                  <opt.icon className="w-4 h-4" />
+                                  <span>{opt.name}</span>
+                               </button>
+                            ))}
+                          </div>,
+                          document.body
+                        )}
+                    </div>
+                    {[{ name: 'medium', label: 'Conjunto (Medium)', placeholder: 'cpc, stories, feed' }, { name: 'campaign', label: 'Campanha (Campaign)', placeholder: 'venda_quente_01' }, { name: 'content', label: 'Criativo (Content)', placeholder: 'video_vsl_01' }].map(field => (
                       <div key={field.name}>
                         <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2.5 px-1">{field.label}</label>
                         <input type="text" name={field.name} value={(formData as any)[field.name]} onChange={handleInputChange} placeholder={field.placeholder} className="w-full px-5 py-4 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white font-bold focus:ring-2 focus:ring-green-500 transition-all shadow-sm" required />

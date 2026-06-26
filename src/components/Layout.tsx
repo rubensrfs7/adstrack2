@@ -2,8 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { 
-  LayoutDashboard, MapPin, Link as LinkIcon, MessageCircle, FileBarChart, User, LogOut, Menu, Moon, Sun, Link2, X, CheckCircle2, ShieldCheck, Kanban, Loader2, Facebook, Users, UserPlus, Settings2, Bell, Webhook, Instagram,
-  HelpCircle, Building2, Globe, Megaphone, MessageSquareText, Handshake, FileText, GitFork, Sparkles, Settings, ChevronRight, ChevronLeft, Search, ChevronDown
+  LayoutDashboard, MapPin, Link as LinkIcon, MessageCircle, FileBarChart, User, LogOut, Menu, Moon, Sun, Link2, X, CheckCircle2, ShieldCheck, Kanban, Loader2, Facebook, Users, UserPlus, Settings2, Bell, Webhook, Instagram, Database,
+  HelpCircle, Building2, Globe, Megaphone, MessageSquareText, Handshake, FileText, GitFork, Sparkles, Settings, ChevronRight, ChevronLeft, Search, ChevronDown, Info, TrendingUp, AlertTriangle
 } from 'lucide-react';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
@@ -109,12 +109,12 @@ const Layout: React.FC<LayoutProps> = ({ children, onLogout }) => {
     { name: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
     { name: 'Leads', icon: UserPlus, path: '/leads' },
     { name: 'WhatsApp', icon: MessageCircle, path: '/whatsapp' },
-    { name: 'Flow', icon: Kanban, path: '/crm' },
-    { name: 'Relatórios', icon: FileText, path: '/reports' },
+    { name: 'Links', icon: LinkIcon, path: '/links' },
     { name: 'Mapa', icon: MapPin, path: '/location' },
-    { name: 'AI', icon: Sparkles, path: '/links' },
-    { name: 'Equipe', icon: Users, path: '/equipe' },
-    { name: 'Configurações', icon: Settings, path: '/cadastro' },
+    { name: 'Flow', icon: Kanban, path: '/crm' },
+    { name: 'Cadastros', icon: Users, path: '/cadastro' },
+    { name: 'Relatórios', icon: FileText, path: '/reports' },
+    { name: 'Webhook', icon: Webhook, path: '/webhook' },
   ];
 
   return (
@@ -124,7 +124,7 @@ const Layout: React.FC<LayoutProps> = ({ children, onLogout }) => {
       <aside 
         className={`bg-gray-100 dark:bg-[#1a1d23] flex flex-col relative z-50 transition-all duration-300 ease-in-out shadow-2xl
           ${isSidebarOpen ? (isSidebarExpanded ? 'w-60' : 'w-[60px]') : 'w-0 lg:w-0'}
-          lg:static fixed inset-y-0 left-0
+          lg:static fixed inset-y-0 left-0 hidden lg:flex
           ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
         `}
       >
@@ -199,6 +199,20 @@ const Layout: React.FC<LayoutProps> = ({ children, onLogout }) => {
         </button>
       </aside>
 
+      {/* Mobile Bottom Navigation - Visible on mobile only */}
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 h-16 bg-white dark:bg-[#1a1d23] border-t border-gray-200 dark:border-white/10 flex justify-around items-center z-50 overflow-x-auto">
+        {navItems.slice(0, 5).map(item => (
+          <NavLink
+            key={item.path}
+            to={item.path}
+            className={({ isActive }) => `flex flex-col items-center gap-1 p-2 ${isActive ? 'text-blue-600' : 'text-gray-500'}`}
+          >
+            <item.icon className="w-5 h-5" />
+            <span className="text-[10px] font-medium">{item.name}</span>
+          </NavLink>
+        ))}
+      </nav>
+
       {/* Right Column: Top Bar + Content */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
         
@@ -223,24 +237,29 @@ const Layout: React.FC<LayoutProps> = ({ children, onLogout }) => {
           </div>
 
           <div className="flex items-center gap-4">
-            <div className="flex items-center bg-gray-200 dark:bg-black/30 border border-gray-300 dark:border-white/10 rounded-full p-0.5 w-14 h-7 cursor-pointer relative shadow-inner" onClick={() => setIsDarkMode(!isDarkMode)}>
-              <div className={`absolute top-0.5 w-6 h-6 rounded-full bg-white border border-gray-300 dark:border-gray-700 flex items-center justify-center shadow-md transition-all duration-300 ${isDarkMode ? 'left-[31px]' : 'left-0.5'}`}>
-                {isDarkMode ? <Moon className="w-4 h-4 text-[#0096cc]" /> : <Sun className="w-4 h-4 text-[#0096cc]" />}
+            <div className="flex items-center bg-gray-200 dark:bg-black/30 border border-gray-300 dark:border-white/10 rounded-full p-0.5 w-12 h-6 cursor-pointer relative shadow-inner" onClick={() => setIsDarkMode(!isDarkMode)}>
+              <div className={`absolute top-0.5 w-5 h-5 rounded-full bg-white border border-gray-300 dark:border-gray-700 flex items-center justify-center shadow-md transition-all duration-300 ${isDarkMode ? 'left-[26px]' : 'left-0.5'}`}>
+                {isDarkMode ? <Moon className="w-3.5 h-3.5 text-[#0096cc]" /> : <Sun className="w-3.5 h-3.5 text-[#0096cc]" />}
               </div>
             </div>
 
-            <div className="relative">
-              <select 
-                className="appearance-none bg-transparent text-gray-700 dark:text-white/80 text-[11px] font-semibold focus:outline-none hover:text-gray-900 dark:hover:text-white cursor-pointer pr-5"
-                value={language}
-                onChange={(e) => setLanguage(e.target.value as any)}
-              >
-                <option value="pt">PT</option>
-                <option value="en">EN</option>
-                <option value="es">ES</option>
-              </select>
-              <div className="absolute right-0 top-0 pointer-events-none flex items-center justify-center h-full text-gray-400">
-                <ChevronDown className="w-3 h-3" />
+            <div className="relative group">
+              <button className="flex items-center gap-1 bg-gray-200 dark:bg-black/30 border border-gray-300 dark:border-white/10 rounded-lg px-2 py-1 text-[11px] font-bold text-gray-700 dark:text-white/80 transition-all hover:bg-gray-300 dark:hover:bg-black/50">
+                  {language.toUpperCase()}
+                  <ChevronDown className="w-3 h-3" />
+              </button>
+              
+              {/* Dropdown */}
+              <div className="absolute right-0 top-full mt-1 w-16 bg-white dark:bg-[#1a1d23] rounded-lg shadow-xl border border-gray-200 dark:border-white/10 py-1 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-[60]">
+                 {['pt', 'en', 'es'].map(lang => (
+                     <button 
+                         key={lang}
+                         onClick={() => setLanguage(lang as any)}
+                         className={`w-full text-left px-3 py-1.5 text-[11px] font-bold ${language === lang ? 'text-[#0096cc] bg-gray-100 dark:bg-white/5' : 'text-gray-700 dark:text-white/70 hover:bg-gray-100 dark:hover:bg-white/5'}`}
+                     >
+                         {lang.toUpperCase()}
+                     </button>
+                 ))}
               </div>
             </div>
 
@@ -265,13 +284,28 @@ const Layout: React.FC<LayoutProps> = ({ children, onLogout }) => {
                   </button>
                 </div>
                 <div className="space-y-4">
-                  {notifications.map(n => (
-                    <div key={n.id} className="p-3 bg-gray-100 dark:bg-white/5 rounded-lg hover:bg-gray-200 dark:hover:bg-white/10 transition-colors">
-                      <p className="text-gray-900 dark:text-white text-sm font-semibold">{n.title}</p>
-                      <p className="text-gray-600 dark:text-gray-400 text-xs mt-0.5">{n.message}</p>
-                      <p className="text-gray-500 text-[10px] mt-1">{n.time}</p>
-                    </div>
-                  ))}
+                  {notifications.map(n => {
+                    const typeConfig = {
+                      success: { classes: 'bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-900/50', icon: CheckCircle2, iconColor: 'text-emerald-500' },
+                      info: { classes: 'bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-900/50', icon: Info, iconColor: 'text-blue-500' },
+                      top: { classes: 'bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-900/50', icon: TrendingUp, iconColor: 'text-amber-500' },
+                      warning: { classes: 'bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-900/50', icon: AlertTriangle, iconColor: 'text-red-500' }
+                    }[n.type as 'success' | 'info' | 'top' | 'warning'] || { classes: 'bg-gray-100 dark:bg-white/5 border-transparent', icon: Bell, iconColor: 'text-gray-500' };
+
+                    const Icon = typeConfig.icon;
+                    return (
+                      <div key={n.id} className={`p-3 border rounded-lg hover:bg-opacity-80 transition-colors flex gap-3 ${typeConfig.classes}`}>
+                        <div className={`mt-0.5 ${typeConfig.iconColor}`}>
+                            <Icon className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <p className="text-gray-900 dark:text-white text-sm font-semibold">{n.title}</p>
+                          <p className="text-gray-600 dark:text-gray-400 text-xs mt-0.5">{n.message}</p>
+                          <p className="text-gray-500 text-[10px] mt-1">{n.time}</p>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -314,7 +348,7 @@ const Layout: React.FC<LayoutProps> = ({ children, onLogout }) => {
         </header>
 
         {/* Content Area */}
-        <main className="flex-1 overflow-y-auto relative text-gray-800 dark:text-zinc-100 bg-gray-50 dark:bg-black transition-colors duration-700 p-4 lg:p-8">
+        <main className="flex-1 overflow-y-auto relative text-gray-800 dark:text-zinc-100 bg-gray-50 dark:bg-black transition-colors duration-700 p-4 lg:p-8 pb-20">
             <Breadcrumb />
             {children}
         </main>

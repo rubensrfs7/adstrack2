@@ -332,11 +332,11 @@ const FlowPage: React.FC = () => {
       {/* Kanban Board View - Optimized Compact Layout */}
       {viewMode === "kanban" && (
         <div className="flex-1 overflow-x-auto overflow-y-hidden pb-4">
-          <div className="grid grid-cols-3 lg:grid-cols-6 gap-3 h-full min-w-[1200px] px-1">
+        <div className="flex flex-row gap-3 h-full min-w-max px-1">
             {COLUMNS.map((col) => (
               <div
                 key={col.id}
-                className="flex flex-col h-full bg-gray-100 dark:bg-[#050505] border border-gray-200 dark:border-zinc-900 rounded-lg overflow-hidden shadow-sm"
+                className="flex flex-col h-full w-64 flex-shrink-0 bg-gray-100 dark:bg-[#050505] border border-gray-200 dark:border-zinc-900 rounded-lg overflow-hidden shadow-sm"
               >
                 {/* Column Header */}
                 <div className="p-3 border-b border-gray-200 dark:border-zinc-900 bg-white dark:bg-[#0a0a0a]">
@@ -487,8 +487,8 @@ const FlowPage: React.FC = () => {
 
       {/* List View */}
       {viewMode === "list" && (
-        <div className="bg-white dark:bg-[#0a0a0a] rounded-lg border border-gray-200 dark:border-zinc-900 shadow-sm overflow-hidden animate-in fade-in">
-          <table className="w-full text-left">
+        <div className="bg-white dark:bg-[#0a0a0a] rounded-lg border border-gray-200 dark:border-zinc-900 shadow-sm overflow-x-auto animate-in fade-in">
+          <table className="w-full text-left min-w-[600px]">
             <thead className="bg-gray-50 dark:bg-[#050505] border-b border-gray-200 dark:border-zinc-900">
               <tr>
                 <th className="p-4 text-xs font-black text-gray-500 uppercase tracking-widest">

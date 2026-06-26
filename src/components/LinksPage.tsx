@@ -1,10 +1,11 @@
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { 
   Link as LinkIcon, Upload, Plus, Copy, Trash2, Edit, Eye, 
   CheckCircle2, Download, Save, X, Loader2, ExternalLink, ClipboardList, Trash, ListPlus, CircleDot, ChevronDown, Target,
-  Type, AlignLeft, Mail, Phone, Calendar, Hash, CheckSquare, Layers, Radio, Filter, XCircle
+  Type, AlignLeft, Mail, Phone, Calendar, Hash, CheckSquare, Layers, Radio, Filter, XCircle,
+  Instagram, Search, Facebook, Music, Globe, Linkedin, Twitter, Link
 } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { Campaign, FormField, FieldType, UserProfile } from '../types';
@@ -20,7 +21,17 @@ const LinksPage: React.FC = () => {
   const [isFormVisible, setIsFormVisible] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'basic' | 'utm' | 'form'>('basic');
+  const [isSourceOpen, setIsSourceOpen] = useState(false);
+  const [sourcePosition, setSourcePosition] = useState({ top: 0, left: 0, width: 0 });
+  const sourceButtonRef = useRef<HTMLButtonElement>(null);
   
+  const toggleSource = () => {
+    if (!isSourceOpen && sourceButtonRef.current) {
+      const rect = sourceButtonRef.current.getBoundingClientRect();
+      setSourcePosition({ top: rect.bottom + window.scrollY + 4, left: rect.left + window.scrollX, width: rect.width });
+    }
+    setIsSourceOpen(!isSourceOpen);
+  };
   const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -458,7 +469,7 @@ const LinksPage: React.FC = () => {
                   ))}
                 </div>
               </div>
-              <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-10 bg-gray-50/50 dark:bg-gray-950/20">
+              <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-10 pb-60 bg-gray-50/50 dark:bg-gray-950/20">
                 {activeTab === 'basic' && (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                     <div className="space-y-8">
@@ -470,7 +481,67 @@ const LinksPage: React.FC = () => {
                 )}
                 {activeTab === 'utm' && (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    {[{ name: 'source', label: 'Origem', placeholder: 'facebook' }, { name: 'medium', label: 'Conjunto', placeholder: 'cpc' }, { name: 'campaign', label: 'Campanha', placeholder: 'promo' }, { name: 'content', label: 'Criativo', placeholder: 'video' }].map(f => (
+                    <div key="source" className="relative">
+                      <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2.5 px-1">Origem</label>
+                      <button 
+                        type="button" 
+                        ref={sourceButtonRef}
+                        onClick={toggleSource}
+                        className="w-full flex items-center justify-between px-5 py-4 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white font-bold outline-none" 
+                      >
+                        {formData.source ? (
+                           <span className="flex items-center gap-2">
+                             {(() => {
+                               const Icon = [
+                                { name: 'Instagram', icon: Instagram },
+                                { name: 'Google', icon: Search },
+                                { name: 'Facebook', icon: Facebook },
+                                { name: 'TikTok', icon: Music },
+                                { name: 'Organic', icon: Globe },
+                                { name: 'Linkedin', icon: Linkedin },
+                                { name: 'X', icon: Twitter },
+                                { name: 'Outros', icon: Link }
+                               ].find(o => o.name === formData.source)?.icon;
+                               return Icon ? <Icon className="w-4 h-4" /> : null;
+                             })()}
+                             {formData.source}
+                           </span>
+                        ) : <span className="text-gray-400">Selecione a Origem</span>}
+                        <ChevronDown className="w-4 h-4 text-gray-400" />
+                      </button>
+                      {isSourceOpen && createPortal(
+                        <div 
+                          className="fixed bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl z-[9999]"
+                          style={{ top: `${sourcePosition.top}px`, left: `${sourcePosition.left}px`, width: `${sourcePosition.width}px` }}
+                        >
+                          {[
+                            { name: 'Instagram', icon: Instagram },
+                            { name: 'Google', icon: Search },
+                            { name: 'Facebook', icon: Facebook },
+                            { name: 'TikTok', icon: Music },
+                            { name: 'Organic', icon: Globe },
+                            { name: 'Linkedin', icon: Linkedin },
+                            { name: 'X', icon: Twitter },
+                            { name: 'Outros', icon: Link }
+                          ].map(opt => (
+                             <button
+                                key={opt.name}
+                                type="button"
+                                className="w-full flex items-center gap-3 px-5 py-3 hover:bg-blue-50 dark:hover:bg-blue-900/20 text-gray-900 dark:text-white text-left"
+                                onClick={() => {
+                                    setFormData(prev => ({...prev, source: opt.name}));
+                                    setIsSourceOpen(false);
+                                }}
+                             >
+                                <opt.icon className="w-4 h-4" />
+                                <span>{opt.name}</span>
+                             </button>
+                          ))}
+                        </div>,
+                        document.body
+                      )}
+                    </div>
+                    {[{ name: 'medium', label: 'Conjunto', placeholder: 'cpc' }, { name: 'campaign', label: 'Campanha', placeholder: 'promo' }, { name: 'content', label: 'Criativo', placeholder: 'video' }].map(f => (
                       <div key={f.name}><label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2.5 px-1">{f.label}</label><input type="text" name={f.name} value={(formData as any)[f.name]} onChange={handleInputChange} placeholder={f.placeholder} className="w-full px-5 py-4 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white font-bold" required /></div>
                     ))}
                   </div>
