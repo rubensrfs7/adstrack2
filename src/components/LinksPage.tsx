@@ -542,7 +542,7 @@ const LinksPage: React.FC = () => {
                       )}
                     </div>
                     {[{ name: 'medium', label: 'Conjunto', placeholder: 'cpc' }, { name: 'campaign', label: 'Campanha', placeholder: 'promo' }, { name: 'content', label: 'Criativo', placeholder: 'video' }].map(f => (
-                      <div key={f.name}><label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2.5 px-1">{f.label}</label><input type="text" name={f.name} value={(formData as any)[f.name]} onChange={handleInputChange} placeholder={f.placeholder} className="w-full px-5 py-4 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white font-bold" required /></div>
+                      <div key={f.name}><label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2.5 px-1">{f.label}</label><input type="text" name={f.name} value={(formData as any)[f.name]} onChange={handleInputChange} placeholder={f.placeholder} className="w-full px-5 py-4 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white font-bold text-lg" required /></div>
                     ))}
                   </div>
                 )}

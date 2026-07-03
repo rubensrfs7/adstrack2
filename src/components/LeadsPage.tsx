@@ -1,11 +1,11 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { 
   Users, Download, Webhook, Search, Filter, Mail, Phone, Calendar, 
   CheckCircle2, X, Loader2, Save, Activity, Globe, Zap, ExternalLink,
   Star, MessageSquare, Tag, Clock, ChevronRight, MoreHorizontal, ClipboardList,
-  Facebook, Instagram, Music, LayoutGrid, List
+  Facebook, Instagram, Music, LayoutGrid, List, ChevronDown
 } from 'lucide-react';
 import { LineChart, Line, ResponsiveContainer } from 'recharts';
 import { motion } from 'motion/react';
@@ -55,6 +55,18 @@ const LeadsPage: React.FC = () => {
   const [viewMode, setViewMode] = useState<'card' | 'list'>('card');
   const [leadFormResponse, setLeadFormResponse] = useState<FormResponse | null>(null);
   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
+  
+  const [isStatusOpen, setIsStatusOpen] = useState(false);
+  const [statusPosition, setStatusPosition] = useState({ top: 0, left: 0, width: 0 });
+  const statusButtonRef = useRef<HTMLButtonElement>(null);
+  
+  const toggleStatus = () => {
+    if (!isStatusOpen && statusButtonRef.current) {
+      const rect = statusButtonRef.current.getBoundingClientRect();
+      setStatusPosition({ top: rect.bottom + window.scrollY + 4, left: rect.left + window.scrollX, width: rect.width });
+    }
+    setIsStatusOpen(!isStatusOpen);
+  };
   
   // Webhook State
   const [isWebhookModalOpen, setIsWebhookModalOpen] = useState(false);
@@ -510,21 +522,47 @@ const LeadsPage: React.FC = () => {
                  </div>
                  <div className="flex items-center gap-3">
                     {!isSupervisor && (
-                      <select 
-                        value={selectedLead.status}
-                        onChange={(e) => handleStatusUpdate(selectedLead.id, e.target.value as Lead['status'])}
-                        className={`px-4 py-2 rounded-lg text-xs font-black uppercase tracking-wider outline-none border transition-all ${
-                          selectedLead.status === 'Novo' ? 'bg-blue-50 text-blue-700 border-blue-100' :
-                          selectedLead.status === 'Contatado' ? 'bg-yellow-50 text-yellow-700 border-yellow-100' :
-                          selectedLead.status === 'Convertido' ? 'bg-green-50 text-green-700 border-green-100' :
-                          'bg-red-50 text-red-700 border-red-100'
-                        }`}
-                      >
-                        <option value="Novo">Novo</option>
-                        <option value="Contatado">Contatado</option>
-                        <option value="Convertido">Convertido</option>
-                        <option value="Perdido">Perdido</option>
-                      </select>
+                      <div className="relative">
+                       <button
+                         ref={statusButtonRef}
+                         onClick={toggleStatus}
+                         className={`px-4 py-2 rounded-lg text-xs font-black uppercase tracking-wider outline-none border transition-all flex items-center gap-2 ${
+                           selectedLead.status === 'Novo' ? 'bg-blue-50 text-blue-700 border-blue-100' :
+                           selectedLead.status === 'Contatado' ? 'bg-yellow-50 text-yellow-700 border-yellow-100' :
+                           selectedLead.status === 'Convertido' ? 'bg-green-50 text-green-700 border-green-100' :
+                           'bg-red-50 text-red-700 border-red-100'
+                         }`}
+                       >
+                         {selectedLead.status}
+                         <ChevronDown className="w-3 h-3" />
+                       </button>
+                       {isStatusOpen && createPortal(
+                         <div 
+                           className="fixed bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl z-[9999] overflow-hidden"
+                           style={{ top: `${statusPosition.top}px`, left: `${statusPosition.left}px`, width: `${statusPosition.width}px` }}
+                         >
+                           {['Novo', 'Contatado', 'Convertido', 'Perdido'].map((status) => (
+                             <button
+                               key={status}
+                               type="button"
+                               className={`w-full px-4 py-2 text-xs font-black uppercase tracking-wider text-left hover:bg-gray-100 dark:hover:bg-gray-700 ${
+                                 status === 'Novo' ? 'text-blue-700' :
+                                 status === 'Contatado' ? 'text-yellow-700' :
+                                 status === 'Convertido' ? 'text-green-700' :
+                                 'text-red-700'
+                               }`}
+                               onClick={() => {
+                                 handleStatusUpdate(selectedLead.id, status as Lead['status']);
+                                 setIsStatusOpen(false);
+                               }}
+                             >
+                               {status}
+                             </button>
+                           ))}
+                         </div>,
+                         document.body
+                       )}
+                     </div>
                     )}
                     <button onClick={() => setIsDetailsModalOpen(false)} className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full transition-colors">
                        <X className="w-6 h-6 text-gray-400" />

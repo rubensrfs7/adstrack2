@@ -323,6 +323,7 @@ const Layout: React.FC<LayoutProps> = ({ children, onLogout }) => {
               
               {/* Dropdown */}
               <div className="absolute right-0 top-full mt-2 w-72 bg-white dark:bg-[#1a1d23] rounded-xl shadow-2xl border border-gray-200 dark:border-white/10 py-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-[60]">
+                {/* Current account */}
                 <div 
                   className="px-4 py-3 flex items-center gap-3 border-b border-gray-200 dark:border-white/5 cursor-pointer hover:bg-gray-100 dark:hover:bg-white/5 transition-colors"
                   onClick={() => navigate('/profile')}
@@ -335,9 +336,35 @@ const Layout: React.FC<LayoutProps> = ({ children, onLogout }) => {
                   <div className="px-2 py-0.5 bg-[#0096cc] rounded text-[10px] font-bold text-white">ATUAL</div>
                   <CheckCircle2 className="w-4 h-4 text-[#0096cc]" />
                 </div>
+
+                {/* Other illustrative accounts */}
+                <div className="px-4 py-2 text-[10px] font-bold text-gray-500 uppercase tracking-widest border-b border-gray-200 dark:border-white/5 mt-2">
+                  Outras Contas
+                </div>
+                {[
+                  { name: 'MegaZap', role: 'Conta 1' },
+                  { name: 'Saega', role: 'Conta 2' }
+                ].map(acc => (
+                  <div key={acc.name} className="px-4 py-3 flex items-center gap-3 cursor-pointer hover:bg-gray-100 dark:hover:bg-white/5 transition-colors">
+                     <div className="w-10 h-10 rounded-full bg-gray-200 dark:bg-white/10 flex items-center justify-center font-bold text-gray-500 dark:text-gray-400 overflow-hidden">
+                       {acc.name === 'MegaZap' ? (
+                         <img src="https://v4d.mz-css.net/dbe883aa859cb94c814737eb9d1e583e/2d8f1a9a4363283fe2b72fb5d350623b/04_1.png" alt="MegaZap" className="w-full h-full object-cover" />
+                       ) : acc.name === 'Saega' ? (
+                         <img src="https://v4d.mz-css.net/a07a10b7f8bf752a80b0147eeb2e9881/ba9cdea858ac8b5be9b2dff92f93042c/1024x1024.png" alt="Saega" className="w-full h-full object-cover" />
+                       ) : (
+                         acc.name.split(' ').map(n => n[0]).join('')
+                       )}
+                     </div>
+                     <div className="flex-1 min-w-0">
+                       <p className="text-sm font-bold text-gray-900 dark:text-white truncate">{acc.name}</p>
+                       <p className="text-xs text-gray-500 dark:text-white/50 truncate">{acc.role}</p>
+                     </div>
+                  </div>
+                ))}
+
                 <button 
                   onClick={onLogout}
-                  className="w-full px-4 py-3 flex items-center gap-3 text-gray-700 dark:text-white/70 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/5 transition-colors"
+                  className="w-full px-4 py-3 flex items-center gap-3 text-gray-700 dark:text-white/70 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/5 transition-colors mt-2"
                 >
                   <LogOut className="w-4 h-4" />
                   <span>Sair</span>

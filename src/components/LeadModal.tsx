@@ -63,7 +63,7 @@ const LeadModal: React.FC<LeadModalProps> = ({ lead, isOpen, onClose }) => {
                         {Object.entries(lead.utm_context).map(([key, val]) => (
                             <div key={key} className="flex-1 p-2 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-100 dark:border-gray-700">
                                 <span className="block text-[7px] text-gray-400 font-black uppercase mb-0.5">{key}</span>
-                                <span className="text-[10px] font-bold text-blue-600 dark:text-blue-400 truncate block">{val || '---'}</span>
+                                <span className="text-sm font-bold text-blue-600 dark:text-blue-400 truncate block">{val || '---'}</span>
                             </div>
                         ))}
                     </div>

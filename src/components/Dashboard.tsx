@@ -224,12 +224,12 @@ const HeatMap: React.FC<{ endDate: string; onDateSelect: (date: string) => void 
   };
 
   const getBgColor = (score: number) => {
-    if (score >= 80) return 'bg-orange-950 text-white';
-    if (score >= 60) return 'bg-orange-900 text-white';
-    if (score >= 40) return 'bg-orange-600 text-white';
-    if (score >= 25) return 'bg-orange-400 text-orange-950';
-    if (score >= 10) return 'bg-orange-200 text-orange-900';
-    return 'bg-orange-50 text-orange-800';
+    if (score >= 80) return 'bg-orange-950 dark:bg-yellow-950 text-white';
+    if (score >= 60) return 'bg-orange-900 dark:bg-yellow-900 text-white';
+    if (score >= 40) return 'bg-orange-600 dark:bg-yellow-700 text-white';
+    if (score >= 25) return 'bg-orange-400 dark:bg-yellow-500 text-orange-950';
+    if (score >= 10) return 'bg-orange-200 dark:bg-yellow-300 text-orange-900';
+    return 'bg-orange-50 dark:bg-yellow-100 text-orange-800';
   };
 
   return (
@@ -1391,14 +1391,18 @@ const Dashboard: React.FC = () => {
                     </thead>
                     <tbody className="text-sm divide-y divide-gray-100 dark:divide-zinc-900 font-medium">
                     {topCampaigns.map((campaign) => (
-                        <tr key={campaign.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                        <tr 
+                          key={campaign.id} 
+                          onClick={() => handleOpenDetails(campaign)}
+                          className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors cursor-pointer"
+                        >
                         <td className="p-4"><img src={campaign.imageUrl} alt="Creative" className="w-10 h-10 rounded-lg object-cover border border-gray-200 dark:border-gray-700" /></td>
                         <td className="p-4">
                             <p className="font-bold text-gray-800 dark:text-gray-200 text-xs truncate max-w-[150px]">{campaign.name}</p>
                             <p className="text-blue-500 font-mono text-[9px] truncate max-w-[120px]">{campaign.shortUrl}</p>
                         </td>
                         <td className="p-4 text-center"><span className="bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 py-1 px-2 rounded-full text-[10px] font-black">{(campaign.score || 0).toLocaleString()}</span></td>
-                        <td className="p-4 text-right"><button onClick={() => handleOpenDetails(campaign)} className="inline-flex items-center gap-1 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/40 px-3 py-1.5 rounded-lg transition-colors font-bold text-[10px] uppercase tracking-widest"><Info className="w-3 h-3" /> Ver</button></td>
+                        <td className="p-4 text-right"><button onClick={(e) => { e.stopPropagation(); handleOpenDetails(campaign); }} className="inline-flex items-center gap-1 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/40 px-3 py-1.5 rounded-lg transition-colors font-bold text-[10px] uppercase tracking-widest"><Info className="w-3 h-3" /> Ver</button></td>
                         </tr>
                     ))}
                     </tbody>

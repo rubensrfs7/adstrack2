@@ -818,7 +818,7 @@ const WhatsappPage: React.FC = () => {
                     {[{ name: 'medium', label: 'Conjunto (Medium)', placeholder: 'cpc, stories, feed' }, { name: 'campaign', label: 'Campanha (Campaign)', placeholder: 'venda_quente_01' }, { name: 'content', label: 'Criativo (Content)', placeholder: 'video_vsl_01' }].map(field => (
                       <div key={field.name}>
                         <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2.5 px-1">{field.label}</label>
-                        <input type="text" name={field.name} value={(formData as any)[field.name]} onChange={handleInputChange} placeholder={field.placeholder} className="w-full px-5 py-4 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white font-bold focus:ring-2 focus:ring-green-500 transition-all shadow-sm" required />
+                        <input type="text" name={field.name} value={(formData as any)[field.name]} onChange={handleInputChange} placeholder={field.placeholder} className="w-full px-5 py-4 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white font-bold text-lg focus:ring-2 focus:ring-green-500 transition-all shadow-sm" required />
                       </div>
                     ))}
                   </div>
